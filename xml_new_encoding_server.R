@@ -396,7 +396,7 @@ for(i in 1:length(list_files))
               }else#name not complete
                 if((sum(temp_site_staff$`Last Name`=="")+sum(temp_site_staff$`First Name`==""))>0)
                 {
-                  new_report_log[i,7]=paste(flag,"Major: Staff's Name not Complete;")
+                  new_report_log[i,7]=paste(flag,"Major: Staff's Name not Complete; ", sep="")
                   new_report_log[i,8]="On Hold"
                 }else
                 {
