@@ -321,6 +321,9 @@ new_report_log={}
 new_report_log=data.frame(matrix(ncol=8, nrow=length(list_files)))
 colnames(new_report_log)=c("Date", "FileName","Site","PI","UniqueSitePI", "StudyId", "Flag", "Result")
 
+
+if(length(list_files)>0)
+{
 for(i in 1:length(list_files))
 {
   temp_site_staff={}
@@ -955,6 +958,7 @@ report_log=report_log[,-ncol(report_log)]
 report_log=report_log[order(report_log$FileName, report_log$Date),]
 
 write.xlsx(report_log, paste("Report_log.xlsx"),sheetName = "Report",append = FALSE, row.names = FALSE)
+}
 end=Sys.time()
 
 running_time=end-start
