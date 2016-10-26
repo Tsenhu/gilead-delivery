@@ -7,7 +7,7 @@
 #Version recorded on 9/21/2016 by Cen Hu
 #Updates aggregation for report_log and all vendors
 
-
+profvis({
 #version recorded on 9/19/2016 by Cen Hu
 ##update robarts vendor
 library(xml2)
@@ -95,7 +95,7 @@ tst_rows=xml_find_all(tst_tb,"./w:tr", ns=ns)
 
 df=bind_rows(lapply(tst_rows,function(row)
   {
-    vals=xml_text(xml_find_all(row,"./w:tc", ns=ns), trim=TRUE)
+    vals=xml_text(xml_find_all(row,".//w:tc", ns=ns), trim=TRUE)
     
     
     if(length(grep("\u2610|\u2612|FORMCHECKBOX", vals)))
@@ -1046,3 +1046,4 @@ end=Sys.time()
 
 running_time=end-start
 print(running_time)
+})
