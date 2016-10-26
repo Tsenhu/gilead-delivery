@@ -7,7 +7,7 @@
 #Version recorded on 9/21/2016 by Cen Hu
 #Updates aggregation for report_log and all vendors
 
-profvis({
+
 #version recorded on 9/19/2016 by Cen Hu
 ##update robarts vendor
 library(xml2)
@@ -1046,4 +1046,4 @@ end=Sys.time()
 
 running_time=end-start
 print(running_time)
-})
+
