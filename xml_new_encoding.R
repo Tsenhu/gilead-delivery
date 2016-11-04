@@ -537,6 +537,10 @@ for(i in 1:length(list_files))
   
 
 }
+  
+#check if total_site tables are exist or not  
+if(is.data.frame(total_site_staff) && is.data.frame(total_site_drug))  
+{
 #add system date
 total_site_staff$Date=toString(Sys.Date())
 total_site_drug$Date=toString(Sys.Date())
@@ -609,6 +613,7 @@ for(sid in 1:nrow(total_site_drug))
   
 }
 total_site_drug=cbind(total_site_drug,new_dsiteid)
+}
 #========================================================
 #move files to folders
 for(f in 1:nrow(new_report_log))
@@ -624,8 +629,18 @@ for(f in 1:nrow(new_report_log))
 
 #=======================================================================================================================
 
+  #=======================================================================================  
+  #===============aggregation part========================================================  
+  #=======================================================================================  
+  setwd(output_path)
+  aggregate_files=list.files(pattern='.xlsx$')  
+  
 #========================================split data into target csv
-
+  
+  
+  if(is.data.frame(total_site_staff) && is.data.frame(total_site_drug))  
+  {
+  
 list_ptcl=unique(total_site_staff$`site Protocol No`)
 
 
@@ -903,11 +918,7 @@ for(i in 1:length(list_ptcl))
               `DepartmentBuilding`=`Address 2`, `Street`=`Address 1`, `Postal Code`=`Zip/Postal Code`, City, `State Province`=`State/Province`, `ISO Province`, `Country`, 
               `Country Phone Code`=Code, `Telephone area Code`, `Telephone number`=Phone, Extension, `Fax Country Code`=Code, `Fax area code`, `Fax number`=Fax, `E-Mail`=`E-mail`)
   }
-#=======================================================================================  
-#===============aggregation part========================================================  
-#=======================================================================================  
-  setwd(output_path)
-  aggregate_files=list.files(pattern='.xlsx$')
+
 #=======================================================================================  
     if(sum(grepl(temp_protocol, aggregate_files))>0)
     {
@@ -1019,7 +1030,7 @@ for(i in 1:length(list_ptcl))
   write.xlsx(robarts, paste(temp_protocol,"_Robarts_Site List Tracker", ".xlsx", sep=""),sheetName = "Site Information", append = FALSE, row.names = FALSE)
   }
 }
-
+}
 #=================================================================================report_log uniquesitepi&aggreate
 if(sum(grepl("Report", aggregate_files))>0)
 {
@@ -1027,7 +1038,7 @@ if(sum(grepl("Report", aggregate_files))>0)
   report_log=rbind(report_log_his,new_report_log)
 }else{report_log=new_report_log}
 
-count_site=data.frame(table(unique(report_log[,c(2,3)])$Site))
+count_site=data.frame(table(unique(report_log[,c(3,4)])$Site))
 
 combined_site=union(levels(report_log$Site),levels(count_site$Var1))
 report_log=left_join(mutate(report_log,Site=factor(Site,levels=combined_site)),
@@ -1041,9 +1052,9 @@ report_log=report_log[,-ncol(report_log)]
 report_log=report_log[order(report_log$FileName, report_log$Date),]
 
 write.xlsx(report_log, paste("Report_log.xlsx"),sheetName = "Report",append = FALSE, row.names = FALSE)
+  
 }
 end=Sys.time()
 
 running_time=end-start
 print(running_time)
-
