@@ -379,12 +379,12 @@ if(length(list_files)>0)
             new_report_log[i,7]=paste(flag,"Major: PI's name doesnt'match between tables; ",sep="")
             new_report_log[i,8]="On Hold"
           }else#flag site infomation not complete
-            if(sum(temp_site_staff[,c(1:11,13:16)]=="")>0)
+            if(sum(temp_site_staff[,c(1:10,13:16)]=="")>0)
             {
               new_report_log[i,7]=paste(flag,"Major: Site Information not Complete; ",sep="")
               new_report_log[i,8]="On Hold"
             }else#flag Drug delivery info complete
-              if(sum(temp_site_drug[,c(17:24,26:29)]=="")>0)
+              if(sum(temp_site_drug[,c(17:23,26:29)]=="")>0)
               {
                 new_report_log[i,7]=paste(flag,"Major: Drug Delivery info not complete; ",sep="")
                 new_report_log[i,8]="On Hold"
