@@ -339,9 +339,15 @@ if(length(list_files)>0)
     ##1. delect title in name
     temp_site_staff=as.data.frame(sapply(temp_result$site_staff,function(x)
       trim(gsub("Dr.ssa|MD|Professor|Prof.|Dr.","",x))))
+    #fix the error for title MD clean, remove the state MD
+    temp_site_staff$`site State/Province`=temp_result$site_staff$`site State/Province`
+    temp_site_staff$`State/Province`=temp_result$site_staff$`State/Province`
+    
     temp_site_drug=as.data.frame(sapply(temp_result$site_drug,function(x)
       trim(gsub("Dr.ssa|MD|Professor|Prof.|Dr.","",x))))
-    
+    #fix the error for title MD clean, remove the state MD
+    temp_site_drug$`site State/Province`=temp_result$site_drug$`site State/Province`
+    temp_site_drug$`Drug Delivery Drug State/Province`=temp_result$site_drug$`Drug Delivery Drug State/Province`
     
     
     #report fill in
