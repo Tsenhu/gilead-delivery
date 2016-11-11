@@ -285,7 +285,7 @@ gilead_docx=function(docx_xml)
   
   if(length(list_protocol)==0)
   {
-    flag=paste("Protocol No Checkbox fatal error.")
+    flag=paste("Protocol No Checkbox fatal error or Table sturcture has been changed.")
   }
   
   if(length(list_protocol)>0)
@@ -338,17 +338,22 @@ for(i in 1:length(list_files))
 
   ##for PI's name not match in differnet tables
   ##1. delect title in name
-  temp_site_staff=as.data.frame(sapply(temp_result$site_staff,function(x)
-    trim(gsub("Dr.ssa|MD|Professor|Prof.|Dr.","",x))))
+  #temp_site_staff=as.data.frame(sapply(temp_result$site_staff,function(x)
+   # trim(gsub("Dr.ssa|MD|Professor|Prof.|Dr.","",x))))
   #fix the error for title MD clean, remove the state MD
-  temp_site_staff$`site State/Province`=temp_result$site_staff$`site State/Province`
-  temp_site_staff$`State/Province`=temp_result$site_staff$`State/Province`
+  #temp_site_staff$`site State/Province`=temp_result$site_staff$`site State/Province`
+  #temp_site_staff$`State/Province`=temp_result$site_staff$`State/Province`
   
-  temp_site_drug=as.data.frame(sapply(temp_result$site_drug,function(x)
-    trim(gsub("Dr.ssa|MD|Professor|Prof.|Dr.","",x))))
+  #temp_site_drug=as.data.frame(sapply(temp_result$site_drug,function(x)
+    #trim(gsub("Dr.ssa|MD|Professor|Prof.|Dr.","",x))))
   #fix the error for title MD clean, remove the state MD
-  temp_site_drug$`site State/Province`=temp_result$site_drug$`site State/Province`
-  temp_site_drug$`Drug Delivery Drug State/Province`=temp_result$site_drug$`Drug Delivery Drug State/Province`
+  #temp_site_drug$`site State/Province`=temp_result$site_drug$`site State/Province`
+  #temp_site_drug$`Drug Delivery Drug State/Province`=temp_result$site_drug$`Drug Delivery Drug State/Province`
+  
+  
+  #create temp_site_staff and temp_site_drug
+  temp_site_staff=temp_result$site_staff
+  temp_site_drug=temp_result$site_drug
   
   
   #report fill in
@@ -366,7 +371,7 @@ for(i in 1:length(list_files))
                   or `site Investigator First Name` !=`First Name`)",sep="")
   
   #flag protocol no checkbox erro
-  if(grepl("Protocol No Checkbox fatal error; ", flag))
+  if(grepl("Protocol No Checkbox fatal error or Table sturcture has been changed; ", flag))
   {
     new_report_log[i,7]=paste("Fatal: ", flag, sep="")
     new_report_log[i,8]="On Hold"
@@ -433,23 +438,22 @@ for(i in 1:length(list_files))
       levels(temp_site_staff[,clvl])=append(levels(temp_site_staff[,clvl]),c("Yes","No","Yes, PI Access"))
     }
     
+    
+    #flag minor errors for site
     for(j in 1:nrow(temp_site_staff))
     {
       
-      if(temp_site_staff[j,]$`Specify Role`=='Principal Investigator')
-      {
-        temp_site_staff[j,c(20:30)]=temp_site_staff[j,c(6:16),drop=TRUE]
-      }
+ 
       
       #check phone number
-      if(temp_site_staff[j,]$`Specify Role`!='Principal Investigator' & temp_site_staff[j,]$Phone=="")
+      if( temp_site_staff[j,]$Phone=="")
       {
         temp_flag=append(temp_flag,"Phone Number Missing; ")
         temp_site_staff[j,]$Phone=temp_site_staff[j,]$`site Phone`
       }
       
       #check Fax
-      if(temp_site_staff[j,]$`Specify Role`!='Principal Investigator' & temp_site_staff[j,]$Fax=="")
+      if( temp_site_staff[j,]$Fax=="")
       {
         temp_flag=append(temp_flag,"Fax Number Missing; ")
         temp_site_staff[j,]$Fax=temp_site_staff[j,]$`site Fax`
@@ -457,53 +461,55 @@ for(i in 1:length(list_files))
       
       
       #check Site Name
-      if(temp_site_staff[j,]$`Specify Role`!='Principal Investigator' & temp_site_staff[j,]$`Site Name`=="")
+      if(temp_site_staff[j,]$`Site Name`=="")
       {
         temp_flag=append(temp_flag,"Site Name Missing; ")
         temp_site_staff[j,]$`Site Name`=temp_site_staff[j,]$`site Site Name`
       }
       
-      #check Address 1
-      if(temp_site_staff[j,]$`Specify Role`!='Principal Investigator' & temp_site_staff[j,]$`Address 1`=="")
+      #check site Address 1
+      if(temp_site_staff[j,]$`Address 1`=="")
       {
         temp_flag=append(temp_flag,"Address 1 Missing; ")
         temp_site_staff[j,]$`Address 1`=temp_site_staff[j,]$`site Address 1`
       }
       
-      #check Address 2
-      if(temp_site_staff[j,]$`Specify Role`!='Principal Investigator' & temp_site_staff[j,]$`Address 2`=="")
+      #check site Address 2
+      if(temp_site_staff[j,]$`Address 2`=="")
       {
         temp_flag=append(temp_flag,"Address 2 Missing; ")
         temp_site_staff[j,]$`Address 2`=temp_site_staff[j,]$`site Address 2`
       }
       
-      #check City
-      if(temp_site_staff[j,]$`Specify Role`!='Principal Investigator' & temp_site_staff[j,]$City=="")
+      #check site City
+      if(temp_site_staff[j,]$City=="")
       {
         temp_flag=append(temp_flag,"City Missing; ")
         temp_site_staff[j,]$City=temp_site_staff[j,]$`site City`
       }
       
-      #check State/Province
-      if(temp_site_staff[j,]$`Specify Role`!='Principal Investigator' & temp_site_staff[j,]$`State/Province`=="")
+      #check site State/Province
+      if(temp_site_staff[j,]$`State/Province`=="")
       {
         temp_flag=append(temp_flag,"State Missing; ")
         temp_site_staff[j,]$`State/Province`=temp_site_staff[j,]$`site State/Province`
       }
       
-      #check zip/postal code
-      if(temp_site_staff[j,]$`Specify Role`!='Principal Investigator' & temp_site_staff[j,]$`Zip/Postal Code`=="")
+      #check site zip/postal code
+      if(temp_site_staff[j,]$`Zip/Postal Code`=="")
       {
         temp_flag=append(temp_flag,"Zipcode Missing; ")
         temp_site_staff[j,]$`Zip/Postal Code`=temp_site_staff[j,]$`site Zip/Postal Code`
       }
       
-      #check country
-      if(temp_site_staff[j,]$`Specify Role`!='Principal Investigator' & temp_site_staff[j,]$Country=="")
+      #check site country
+      if(temp_site_staff[j,]$Country=="")
       {
         temp_flag=append(temp_flag,"Country Missing; ")
         temp_site_staff[j,]$Country=temp_site_staff[j,]$`site Country`
       }
+      
+   
       
       #check Covance checkbox
       if(('Yes' %in% temp_site_staff$`Covance e-Site Access`+'Yes' %in% temp_site_staff$`Covance Lab Reports` +'Yes' %in% temp_site_staff$`Covance Lab Supplies`)!=3)
@@ -523,6 +529,16 @@ for(i in 1:length(list_files))
     }
     
 
+    #flag minor errors for drug
+    for(k in 1:nrow(temp_site_drug))
+    {
+      if(temp_site_drug[k,]$`Drug Delivery Drug Address 2`=="")
+      {
+        temp_flag=append(temp_flag,"Drug Address 2; ")
+      }
+    }
+    
+    
     
     if(flag=="" & length(temp_flag)==0)
     {flag="Good condition"}else{
@@ -562,10 +578,10 @@ total_site_drug$`Drug Delivery Drug Country`=factor(total_site_drug$`Drug Delive
 
 #formalize US country name
 
-total_site_staff[grep("USA|US",total_site_staff$`site Country`),c("site Country", "Country")]="United States"
+total_site_staff[grep("USA|US|United States of America",total_site_staff$`site Country`),c("site Country", "Country")]="United States"
 
-total_site_drug[grep("USA|US",total_site_drug$`Drug Delivery Drug Country`),"Drug Delivery Drug Country"]="United States"
-total_site_drug[grep("USA|US",total_site_drug$`site Country`),"site Country"]="United States"
+total_site_drug[grep("USA|US|United States of America",total_site_drug$`Drug Delivery Drug Country`),"Drug Delivery Drug Country"]="United States"
+total_site_drug[grep("USA|US|United States of America",total_site_drug$`site Country`),"site Country"]="United States"
 #clean country name
 total_site_staff$`site Country`=unlist(lapply(as.character(total_site_staff$`site Country`), country_rename))
 total_site_staff$Country=unlist(lapply(as.character(total_site_staff$Country), country_rename))
