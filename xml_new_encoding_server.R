@@ -16,6 +16,8 @@ library(docxtractr)
 library(RODBC)
 library(sqldf)
 
+
+
 rm(list=ls())
 gc(reset=TRUE)
 
@@ -310,6 +312,7 @@ output_path="//chofile/Applications/ETLKCI/ETLUserSource/Gilead/Gilead_Diversity
 finished_path="//chofile/Applications/ETLKCI/ETLUserSource/Gilead/Gilead_Diversity_and_Selection_Study/D&S_Archive_Folder"
 onhold_path="//chofile/Applications/ETLKCI/ETLUserSource/Gilead/Gilead_Diversity_and_Selection_Study/D&S_OnHold_Folder"
 
+
 setwd(input_path)
 list_files=list.files(pattern='.docx$')
 
@@ -366,8 +369,8 @@ if(length(list_files)>0)
     diff_pi=paste("    select *
                   from  temp_site_staff
                   where `Specify Role` like '%Principal Investigator%'
-                  and (`site Investigator Last Name`!= `Last Name`
-                  or `site Investigator First Name` !=`First Name`)",sep="")
+                  and (upper(`site Investigator Last Name`)!= upper(`Last Name`)
+                  or upper(`site Investigator First Name`) !=upper(`First Name`))",sep="")
     
     #flag protocol no checkbox erro
     if(grepl("Protocol No Checkbox fatal error or Table sturcture has been changed; ", flag))
@@ -415,146 +418,156 @@ if(length(list_files)>0)
                       new_report_log[i,7]=paste(flag,"Major: Staff's E-mail is missing; ")
                       new_report_log[i,8]="On Hold"
                     }else
-                    {
-                      new_report_log[i,8]="Pass"
-                      
-                      
-                      ###########################################################
-                      #                     DATA IMPUTE AND CLEAN   for STAFF   #
-                      ###########################################################
-                      #record missing condition for blanks
-                      temp_flag={}
-                      
-                      #add levels to the blank columns
-                      for(lvl in 6:16)
+                      if(length(unique(paste(temp_site_staff$`Last Name`," ",temp_site_staff$`First Name`, sep="")))!=length(unique(temp_site_staff$`E-mail`)))
                       {
-                        levels(temp_site_staff[,lvl+14])=append(levels(temp_site_staff[,lvl+14]),levels(temp_site_staff[,lvl]))
-                      }
-                      
-                      #add levels to checkbox
-                      for(clvl in 31:length(temp_site_staff))
+                        new_report_log[i,7]=paste(flag,"Major: E-mail is not unique;")
+                        new_report_log[i,8]="On Hold"
+                      }else
                       {
-                        levels(temp_site_staff[,clvl])=append(levels(temp_site_staff[,clvl]),c("Yes","No","Yes, PI Access"))
-                      }
-                      
-                      
-                      #flag minor errors for site
-                      for(j in 1:nrow(temp_site_staff))
-                      {
+                        new_report_log[i,8]="Pass"
                         
                         
+                        ###########################################################
+                        #                     DATA IMPUTE AND CLEAN   for STAFF   #
+                        ###########################################################
+                        #record missing condition for blanks
+                        temp_flag={}
                         
-                        #check phone number
-                        if( temp_site_staff[j,]$Phone=="")
+                        #add levels to the blank columns
+                        for(lvl in 6:16)
                         {
-                          temp_flag=append(temp_flag,"Phone Number Missing; ")
-                          temp_site_staff[j,]$Phone=temp_site_staff[j,]$`site Phone`
+                          levels(temp_site_staff[,lvl+14])=append(levels(temp_site_staff[,lvl+14]),levels(temp_site_staff[,lvl]))
                         }
                         
-                        #check Fax
-                        if( temp_site_staff[j,]$Fax=="")
+                        #add levels to checkbox
+                        for(clvl in 31:length(temp_site_staff))
                         {
-                          temp_flag=append(temp_flag,"Fax Number Missing; ")
-                          temp_site_staff[j,]$Fax=temp_site_staff[j,]$`site Fax`
+                          levels(temp_site_staff[,clvl])=append(levels(temp_site_staff[,clvl]),c("Yes","No","Yes, PI Access"))
                         }
                         
                         
-                        #check Site Name
-                        if(temp_site_staff[j,]$`Site Name`=="")
+                        #flag minor errors for site
+                        for(j in 1:nrow(temp_site_staff))
                         {
-                          temp_flag=append(temp_flag,"Site Name Missing; ")
-                          temp_site_staff[j,]$`Site Name`=temp_site_staff[j,]$`site Site Name`
-                        }
-                        
-                        #check site Address 1
-                        if(temp_site_staff[j,]$`Address 1`=="")
-                        {
-                          temp_flag=append(temp_flag,"Address 1 Missing; ")
-                          temp_site_staff[j,]$`Address 1`=temp_site_staff[j,]$`site Address 1`
-                        }
-                        
-                        #check site Address 2
-                        if(temp_site_staff[j,]$`Address 2`=="")
-                        {
-                          temp_flag=append(temp_flag,"Address 2 Missing; ")
-                          temp_site_staff[j,]$`Address 2`=temp_site_staff[j,]$`site Address 2`
-                        }
-                        
-                        #check site City
-                        if(temp_site_staff[j,]$City=="")
-                        {
-                          temp_flag=append(temp_flag,"City Missing; ")
-                          temp_site_staff[j,]$City=temp_site_staff[j,]$`site City`
-                        }
-                        
-                        #check site State/Province
-                        if(temp_site_staff[j,]$`State/Province`=="")
-                        {
-                          temp_flag=append(temp_flag,"State Missing; ")
-                          temp_site_staff[j,]$`State/Province`=temp_site_staff[j,]$`site State/Province`
-                        }
-                        
-                        #check site zip/postal code
-                        if(temp_site_staff[j,]$`Zip/Postal Code`=="")
-                        {
-                          temp_flag=append(temp_flag,"Zipcode Missing; ")
-                          temp_site_staff[j,]$`Zip/Postal Code`=temp_site_staff[j,]$`site Zip/Postal Code`
-                        }
-                        
-                        #check site country
-                        if(temp_site_staff[j,]$Country=="")
-                        {
-                          temp_flag=append(temp_flag,"Country Missing; ")
-                          temp_site_staff[j,]$Country=temp_site_staff[j,]$`site Country`
-                        }
-                        
-                        
-                        
-                        #check Covance checkbox
-                        if(('Yes' %in% temp_site_staff$`Covance e-Site Access`+'Yes' %in% temp_site_staff$`Covance Lab Reports` +'Yes' %in% temp_site_staff$`Covance Lab Supplies`)!=3)
-                        {
-                          if('Study Coordinator' %in% temp_site_staff$`Specify Role`)
+                          
+                          
+                          
+                          #check phone number
+                          if( temp_site_staff[j,]$Phone=="")
                           {
-                            temp_flag=append(temp_flag,"Covance checkboxes haven't checked completely. Force SC to check it; ")
-                            temp_site_staff[temp_site_staff$`Specify Role`=='Study Coordinator',c(34,35,36)]="Yes"
-                          }else
+                            temp_flag=append(temp_flag,"Phone Number Missing; ")
+                            temp_site_staff[j,]$Phone=temp_site_staff[j,]$`site Phone`
+                          }
+                          
+                          #check Fax
+                          if( temp_site_staff[j,]$Fax=="")
                           {
-                            temp_flag=append(temp_flag,"Covance checkboxes haven't checked completely. Force PI to check it; ")
-                            temp_site_staff[temp_site_staff$`Specify Role`=='Principal Investigator',c(34,35,36)]="Yes"
+                            temp_flag=append(temp_flag,"Fax Number Missing; ")
+                            temp_site_staff[j,]$Fax=temp_site_staff[j,]$`site Fax`
+                          }
+                          
+                          #check email
+                          if(temp_site_staff[j,]$`Specify Role`=='Principal Investigator' && temp_site_staff[j,]$`E-mail`=="")
+                          {
+                            temp_site_staff[j,]$`E-mail`=temp_site_staff[j,]$`site Email`
+                          }
+                          
+                          #check Site Name
+                          if(temp_site_staff[j,]$`Site Name`=="")
+                          {
+                            temp_flag=append(temp_flag,"Site Name Missing; ")
+                            temp_site_staff[j,]$`Site Name`=temp_site_staff[j,]$`site Site Name`
+                          }
+                          
+                          #check site Address 1
+                          if(temp_site_staff[j,]$`Address 1`=="")
+                          {
+                            temp_flag=append(temp_flag,"Address 1 Missing; ")
+                            temp_site_staff[j,]$`Address 1`=temp_site_staff[j,]$`site Address 1`
+                          }
+                          
+                          #check site Address 2
+                          if(temp_site_staff[j,]$`Address 2`=="")
+                          {
+                            temp_flag=append(temp_flag,"Address 2 Missing; ")
+                            temp_site_staff[j,]$`Address 2`=temp_site_staff[j,]$`site Address 2`
+                          }
+                          
+                          #check site City
+                          if(temp_site_staff[j,]$City=="")
+                          {
+                            temp_flag=append(temp_flag,"City Missing; ")
+                            temp_site_staff[j,]$City=temp_site_staff[j,]$`site City`
+                          }
+                          
+                          #check site State/Province
+                          if(temp_site_staff[j,]$`State/Province`=="")
+                          {
+                            temp_flag=append(temp_flag,"State Missing; ")
+                            temp_site_staff[j,]$`State/Province`=temp_site_staff[j,]$`site State/Province`
+                          }
+                          
+                          #check site zip/postal code
+                          if(temp_site_staff[j,]$`Zip/Postal Code`=="")
+                          {
+                            temp_flag=append(temp_flag,"Zipcode Missing; ")
+                            temp_site_staff[j,]$`Zip/Postal Code`=temp_site_staff[j,]$`site Zip/Postal Code`
+                          }
+                          
+                          #check site country
+                          if(temp_site_staff[j,]$Country=="")
+                          {
+                            temp_flag=append(temp_flag,"Country Missing; ")
+                            temp_site_staff[j,]$Country=temp_site_staff[j,]$`site Country`
                           }
                           
                           
+                          
+                          #check Covance checkbox
+                          if(('Yes' %in% temp_site_staff$`Covance e-Site Access`+'Yes' %in% temp_site_staff$`Covance Lab Reports` +'Yes' %in% temp_site_staff$`Covance Lab Supplies`)!=3)
+                          {
+                            if('Study Coordinator' %in% temp_site_staff$`Specify Role`)
+                            {
+                              temp_flag=append(temp_flag,"Covance checkboxes haven't checked completely. Force SC to check it; ")
+                              temp_site_staff[temp_site_staff$`Specify Role`=='Study Coordinator',c(34,35,36)]="Yes"
+                            }else
+                            {
+                              temp_flag=append(temp_flag,"Covance checkboxes haven't checked completely. Force PI to check it; ")
+                              temp_site_staff[temp_site_staff$`Specify Role`=='Principal Investigator',c(34,35,36)]="Yes"
+                            }
+                            
+                            
+                          }
                         }
-                      }
-                      
-                      
-                      #flag minor errors for drug
-                      for(k in 1:nrow(temp_site_drug))
-                      {
-                        if(temp_site_drug[k,]$`Drug Delivery Drug Address 2`=="")
+                        
+                        
+                        #flag minor errors for drug
+                        for(k in 1:nrow(temp_site_drug))
                         {
-                          temp_flag=append(temp_flag,"Drug Address 2; ")
+                          if(temp_site_drug[k,]$`Drug Delivery Drug Address 2`=="")
+                          {
+                            temp_flag=append(temp_flag,"Drug Address 2 Missing; ")
+                          }
                         }
+                        
+                        
+                        
+                        if(flag=="" & length(temp_flag)==0)
+                        {flag="Good condition"}else{
+                          flag=paste(flag,"Minors: ",paste(unique(temp_flag),collapse = ""),sep="")}
+                        
+                        new_report_log[i,7]=flag
+                        
+                        
+                        
+                        #combine temp tables 
+                        
+                        total_site_staff=rbind(total_site_staff,temp_site_staff)
+                        
+                        total_site_drug=rbind(total_site_drug,temp_site_drug)
+                        
+                        print(paste(i, " complete"))
                       }
-                      
-                      
-                      
-                      if(flag=="" & length(temp_flag)==0)
-                      {flag="Good condition"}else{
-                        flag=paste(flag,"Minors: ",paste(unique(temp_flag),collapse = ""),sep="")}
-                      
-                      new_report_log[i,7]=flag
-                      
-                      
-                      
-                      #combine temp tables 
-                      
-                      total_site_staff=rbind(total_site_staff,temp_site_staff)
-                      
-                      total_site_drug=rbind(total_site_drug,temp_site_drug)
-                      
-                      print(paste(i, " complete"))
-                    }
     
     
   }
@@ -734,14 +747,17 @@ if(length(list_files)>0)
                                           `Drug Delivery Address same as Site Address?`=ifelse(compare_col(`site Site Name`,`Drug Delivery Drug Location`) &
                                                                                                  compare_col(`site Address 1`, `Drug Delivery Drug Address 1`) &
                                                                                                  compare_col(`site Address 2`, `Drug Delivery Drug Address 2`) &
-                                                                                                 compare_col(`site City`, `Drug Delivery Drug City`), 'Yes', 'No'))
+                                                                                                 compare_col(`site City`, `Drug Delivery Drug City`), 'Yes', 'No'),
+                                          `siteAddress2`=ifelse(`site Address 3`=='',`site Address 2`,paste(`site Address 2`, `site Address 3`, sep = ", ")),
+                                          `drugAddress2`=ifelse(`Drug Delivery Drug Address 3`=='',`Drug Delivery Drug Address 2`, paste(`Drug Delivery Drug Address 2`,
+                                                                                                                                         `Drug Delivery Drug Address 3`, sep = ", " )))
         
         new_bracket_site_drug=select(temp_new_bracket_site_drug,`Add/Update Date`=Date, Country=`site Country`, SiteID=`new_dsiteid`, `Screening Status`, `Randomization Status`,
                                      `Site Type for Supply Strategy`, `Threshold Resupply Status`, `Predictive Resupply Status`, Location=`site Site Name`, `Investigator First Name`=`site Investigator First Name`,
-                                     `Investigator Last Name`=`site Investigator Last Name`, Address1=`site Address 1`, Address2=`site Address 2`, City=`site City`, `State/Province`=`site State/Province`,
+                                     `Investigator Last Name`=`site Investigator Last Name`, Address1=`site Address 1`, Address2=`siteAddress2`, City=`site City`, `State/Province`=`site State/Province`,
                                      `Zip/Postal Code`=`site Zip/Postal Code`, TimeZone, TZID, `Adjust for Daylight Savings?`, `Site Phone Number`=`site Phone`, `Site Fax Number`=`site Fax`, SiteEmail=`site Email`,
                                      `Drug Location`=`Drug Delivery Drug Location`, `Drug Delivery Contact First Name`=`Drug Delivery First Name`, `Drug Delivery Contact Last Name`=`Drug Delivery Last Name`,
-                                     DrugCountry=`Drug Delivery Drug Country`, `Drug Delivery Address same as Site Address?`, DrugAdd1=`Drug Delivery Drug Address 1`, DrugAdd2=`Drug Delivery Drug Address 2`,
+                                     DrugCountry=`Drug Delivery Drug Country`, `Drug Delivery Address same as Site Address?`, DrugAdd1=`Drug Delivery Drug Address 1`, DrugAdd2=`drugAddress2`,
                                      DrugCity=`Drug Delivery Drug City`, `DrugState/Province`=`Drug Delivery Drug State/Province`, `DrugZip/Postal Code`=`Drug Delivery Drug Zip/Postal Code`, DrugPhone=`Drug Delivery Drug Phone`,
                                      DrugFax=`Drug Delivery Drug Fax`, DrugEmail=`Drug Delivery Drug E-mail`, `Shipping Note`)
       }
