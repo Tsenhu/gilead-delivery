@@ -16,6 +16,8 @@ library(docxtractr)
 library(RODBC)
 library(sqldf)
 
+
+
 rm(list=ls())
 gc(reset=TRUE)
 
@@ -309,7 +311,7 @@ input_path="C:/Users/hucen/GitHub/pro/python/Gilead_XML/input_file_new"
 output_path="C:/Users/hucen/GitHub/pro/python/Gilead_XML/output_file_new"
 finished_path="C:/Users/hucen/GitHub/pro/python/Gilead_XML/finished_file_new"
 onhold_path="C:/Users/hucen/GitHub/pro/python/Gilead_XML/onhold_file_new"
-test_path="C:/Users/hucen/GitHub/pro/python/Gilead_XML/badass"
+#test_path="C:/Users/hucen/GitHub/pro/python/Gilead_XML/badass"
 
 setwd(input_path)
 list_files=list.files(pattern='.docx$')
@@ -367,8 +369,8 @@ for(i in 1:length(list_files))
   diff_pi=paste("    select *
                   from  temp_site_staff
                   where `Specify Role` like '%Principal Investigator%'
-                  and (`site Investigator Last Name`!= `Last Name`
-                  or `site Investigator First Name` !=`First Name`)",sep="")
+                  and (upper(`site Investigator Last Name`)!= upper(`Last Name`)
+                  or upper(`site Investigator First Name`) !=upper(`First Name`))",sep="")
   
   #flag protocol no checkbox erro
   if(grepl("Protocol No Checkbox fatal error or Table sturcture has been changed; ", flag))
@@ -416,7 +418,12 @@ for(i in 1:length(list_files))
             new_report_log[i,7]=paste(flag,"Major: Staff's E-mail is missing; ")
             new_report_log[i,8]="On Hold"
           }else
-           {
+            if(length(unique(paste(temp_site_staff$`Last Name`," ",temp_site_staff$`First Name`, sep="")))!=length(unique(temp_site_staff$`E-mail`)))
+            {
+              new_report_log[i,7]=paste(flag,"Major: E-mail is not unique;")
+              new_report_log[i,8]="On Hold"
+            }else
+            {
              new_report_log[i,8]="Pass"
 
     
@@ -459,6 +466,11 @@ for(i in 1:length(list_files))
         temp_site_staff[j,]$Fax=temp_site_staff[j,]$`site Fax`
       }
       
+      #check email
+      if(temp_site_staff[j,]$`Specify Role`=='Principal Investigator' && temp_site_staff[j,]$`E-mail`=="")
+      {
+        temp_site_staff[j,]$`E-mail`=temp_site_staff[j,]$`site Email`
+      }
       
       #check Site Name
       if(temp_site_staff[j,]$`Site Name`=="")
@@ -534,7 +546,7 @@ for(i in 1:length(list_files))
     {
       if(temp_site_drug[k,]$`Drug Delivery Drug Address 2`=="")
       {
-        temp_flag=append(temp_flag,"Drug Address 2; ")
+        temp_flag=append(temp_flag,"Drug Address 2 Missing; ")
       }
     }
     
@@ -735,14 +747,17 @@ for(i in 1:length(list_ptcl))
                                    `Drug Delivery Address same as Site Address?`=ifelse(compare_col(`site Site Name`,`Drug Delivery Drug Location`) &
                                                                                   compare_col(`site Address 1`, `Drug Delivery Drug Address 1`) &
                                                                                   compare_col(`site Address 2`, `Drug Delivery Drug Address 2`) &
-                                                                                  compare_col(`site City`, `Drug Delivery Drug City`), 'Yes', 'No'))
+                                                                                  compare_col(`site City`, `Drug Delivery Drug City`), 'Yes', 'No'),
+                                   `siteAddress2`=ifelse(`site Address 3`=='',`site Address 2`,paste(`site Address 2`, `site Address 3`, sep = ", ")),
+                                   `drugAddress2`=ifelse(`Drug Delivery Drug Address 3`=='',`Drug Delivery Drug Address 2`, paste(`Drug Delivery Drug Address 2`,
+                                                                                                                                  `Drug Delivery Drug Address 3`, sep = ", " )))
   
   new_bracket_site_drug=select(temp_new_bracket_site_drug,`Add/Update Date`=Date, Country=`site Country`, SiteID=`new_dsiteid`, `Screening Status`, `Randomization Status`,
                                `Site Type for Supply Strategy`, `Threshold Resupply Status`, `Predictive Resupply Status`, Location=`site Site Name`, `Investigator First Name`=`site Investigator First Name`,
-                               `Investigator Last Name`=`site Investigator Last Name`, Address1=`site Address 1`, Address2=`site Address 2`, City=`site City`, `State/Province`=`site State/Province`,
+                               `Investigator Last Name`=`site Investigator Last Name`, Address1=`site Address 1`, Address2=`siteAddress2`, City=`site City`, `State/Province`=`site State/Province`,
                                `Zip/Postal Code`=`site Zip/Postal Code`, TimeZone, TZID, `Adjust for Daylight Savings?`, `Site Phone Number`=`site Phone`, `Site Fax Number`=`site Fax`, SiteEmail=`site Email`,
                                `Drug Location`=`Drug Delivery Drug Location`, `Drug Delivery Contact First Name`=`Drug Delivery First Name`, `Drug Delivery Contact Last Name`=`Drug Delivery Last Name`,
-                               DrugCountry=`Drug Delivery Drug Country`, `Drug Delivery Address same as Site Address?`, DrugAdd1=`Drug Delivery Drug Address 1`, DrugAdd2=`Drug Delivery Drug Address 2`,
+                               DrugCountry=`Drug Delivery Drug Country`, `Drug Delivery Address same as Site Address?`, DrugAdd1=`Drug Delivery Drug Address 1`, DrugAdd2=`drugAddress2`,
                                DrugCity=`Drug Delivery Drug City`, `DrugState/Province`=`Drug Delivery Drug State/Province`, `DrugZip/Postal Code`=`Drug Delivery Drug Zip/Postal Code`, DrugPhone=`Drug Delivery Drug Phone`,
                                DrugFax=`Drug Delivery Drug Fax`, DrugEmail=`Drug Delivery Drug E-mail`, `Shipping Note`)
   }
