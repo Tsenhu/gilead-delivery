@@ -312,7 +312,6 @@ output_path="//chofile/Applications/ETLKCI/ETLUserSource/Gilead/Gilead_Diversity
 finished_path="//chofile/Applications/ETLKCI/ETLUserSource/Gilead/Gilead_Diversity_and_Selection_Study/D&S_Archive_Folder"
 onhold_path="//chofile/Applications/ETLKCI/ETLUserSource/Gilead/Gilead_Diversity_and_Selection_Study/D&S_OnHold_Folder"
 
-
 setwd(input_path)
 list_files=list.files(pattern='.docx$')
 
@@ -417,157 +416,170 @@ if(length(list_files)>0)
                     {
                       new_report_log[i,7]=paste(flag,"Major: Staff's E-mail is missing; ")
                       new_report_log[i,8]="On Hold"
-                    }else
+                    }else#unique email for members
                       if(length(unique(paste(temp_site_staff$`Last Name`," ",temp_site_staff$`First Name`, sep="")))!=length(unique(temp_site_staff$`E-mail`)))
                       {
                         new_report_log[i,7]=paste(flag,"Major: E-mail is not unique;")
                         new_report_log[i,8]="On Hold"
-                      }else
-                      {
-                        new_report_log[i,8]="Pass"
-                        
-                        
-                        ###########################################################
-                        #                     DATA IMPUTE AND CLEAN   for STAFF   #
-                        ###########################################################
-                        #record missing condition for blanks
-                        temp_flag={}
-                        
-                        #add levels to the blank columns
-                        for(lvl in 6:16)
+                      }else #more than one SC
+                        if(sum(temp_site_staff$`Specify Role`=='Study Coordinator')/length(unique(temp_site_staff$`site Protocol No`))>1)
                         {
-                          levels(temp_site_staff[,lvl+14])=append(levels(temp_site_staff[,lvl+14]),levels(temp_site_staff[,lvl]))
-                        }
-                        
-                        #add levels to checkbox
-                        for(clvl in 31:length(temp_site_staff))
-                        {
-                          levels(temp_site_staff[,clvl])=append(levels(temp_site_staff[,clvl]),c("Yes","No","Yes, PI Access"))
-                        }
-                        
-                        
-                        #flag minor errors for site
-                        for(j in 1:nrow(temp_site_staff))
-                        {
-                          
-                          
-                          
-                          #check phone number
-                          if( temp_site_staff[j,]$Phone=="")
+                          new_report_log[i,7]=paste(flag, "Major: More than one Study Coordinators in this site; ")
+                          new_report_log[i,8]="On Hold"
+                        }else#multiple non PI SC memebers select Robarts
+                          if(sum(temp_site_staff$`Specify Role`!='Principal Investigator' & temp_site_staff$`Specify Role`!='Study Coordinator' & temp_site_staff$`Robarts/Central Imaging Kit Shipments`=='Yes')/
+                             length(unique(temp_site_staff$`site Protocol No`))>1)
                           {
-                            temp_flag=append(temp_flag,"Phone Number Missing; ")
-                            temp_site_staff[j,]$Phone=temp_site_staff[j,]$`site Phone`
-                          }
-                          
-                          #check Fax
-                          if( temp_site_staff[j,]$Fax=="")
+                            new_report_log[i,7]=paste(flag, "Major: More than one non-PI, non-SC member have checked Robarts; ")
+                            new_report_log[i,8]="On Hold"
+                          }else
                           {
-                            temp_flag=append(temp_flag,"Fax Number Missing; ")
-                            temp_site_staff[j,]$Fax=temp_site_staff[j,]$`site Fax`
-                          }
-                          
-                          #check email
-                          if(temp_site_staff[j,]$`Specify Role`=='Principal Investigator' && temp_site_staff[j,]$`E-mail`=="")
-                          {
-                            temp_site_staff[j,]$`E-mail`=temp_site_staff[j,]$`site Email`
-                          }
-                          
-                          #check Site Name
-                          if(temp_site_staff[j,]$`Site Name`=="")
-                          {
-                            temp_flag=append(temp_flag,"Site Name Missing; ")
-                            temp_site_staff[j,]$`Site Name`=temp_site_staff[j,]$`site Site Name`
-                          }
-                          
-                          #check site Address 1
-                          if(temp_site_staff[j,]$`Address 1`=="")
-                          {
-                            temp_flag=append(temp_flag,"Address 1 Missing; ")
-                            temp_site_staff[j,]$`Address 1`=temp_site_staff[j,]$`site Address 1`
-                          }
-                          
-                          #check site Address 2
-                          if(temp_site_staff[j,]$`Address 2`=="")
-                          {
-                            temp_flag=append(temp_flag,"Address 2 Missing; ")
-                            temp_site_staff[j,]$`Address 2`=temp_site_staff[j,]$`site Address 2`
-                          }
-                          
-                          #check site City
-                          if(temp_site_staff[j,]$City=="")
-                          {
-                            temp_flag=append(temp_flag,"City Missing; ")
-                            temp_site_staff[j,]$City=temp_site_staff[j,]$`site City`
-                          }
-                          
-                          #check site State/Province
-                          if(temp_site_staff[j,]$`State/Province`=="")
-                          {
-                            temp_flag=append(temp_flag,"State Missing; ")
-                            temp_site_staff[j,]$`State/Province`=temp_site_staff[j,]$`site State/Province`
-                          }
-                          
-                          #check site zip/postal code
-                          if(temp_site_staff[j,]$`Zip/Postal Code`=="")
-                          {
-                            temp_flag=append(temp_flag,"Zipcode Missing; ")
-                            temp_site_staff[j,]$`Zip/Postal Code`=temp_site_staff[j,]$`site Zip/Postal Code`
-                          }
-                          
-                          #check site country
-                          if(temp_site_staff[j,]$Country=="")
-                          {
-                            temp_flag=append(temp_flag,"Country Missing; ")
-                            temp_site_staff[j,]$Country=temp_site_staff[j,]$`site Country`
-                          }
-                          
-                          
-                          
-                          #check Covance checkbox
-                          if(('Yes' %in% temp_site_staff$`Covance e-Site Access`+'Yes' %in% temp_site_staff$`Covance Lab Reports` +'Yes' %in% temp_site_staff$`Covance Lab Supplies`)!=3)
-                          {
-                            if('Study Coordinator' %in% temp_site_staff$`Specify Role`)
+                            new_report_log[i,8]="Pass"
+                            
+                            
+                            ###########################################################
+                            #                     DATA IMPUTE AND CLEAN   for STAFF   #
+                            ###########################################################
+                            #record missing condition for blanks
+                            temp_flag={}
+                            
+                            #add levels to the blank columns
+                            for(lvl in 6:16)
                             {
-                              temp_flag=append(temp_flag,"Covance checkboxes haven't checked completely. Force SC to check it; ")
-                              temp_site_staff[temp_site_staff$`Specify Role`=='Study Coordinator',c(34,35,36)]="Yes"
-                            }else
+                              levels(temp_site_staff[,lvl+14])=append(levels(temp_site_staff[,lvl+14]),levels(temp_site_staff[,lvl]))
+                            }
+                            
+                            #add levels to checkbox
+                            for(clvl in 31:length(temp_site_staff))
                             {
-                              temp_flag=append(temp_flag,"Covance checkboxes haven't checked completely. Force PI to check it; ")
-                              temp_site_staff[temp_site_staff$`Specify Role`=='Principal Investigator',c(34,35,36)]="Yes"
+                              levels(temp_site_staff[,clvl])=append(levels(temp_site_staff[,clvl]),c("Yes","No","Yes, PI Access"))
                             }
                             
                             
+                            #flag minor errors for site
+                            for(j in 1:nrow(temp_site_staff))
+                            {
+                              
+                              
+                              
+                              #check phone number
+                              if( temp_site_staff[j,]$Phone=="")
+                              {
+                                temp_flag=append(temp_flag,"Phone Number Missing; ")
+                                temp_site_staff[j,]$Phone=temp_site_staff[j,]$`site Phone`
+                              }
+                              
+                              #check Fax
+                              if( temp_site_staff[j,]$Fax=="")
+                              {
+                                temp_flag=append(temp_flag,"Fax Number Missing; ")
+                                temp_site_staff[j,]$Fax=temp_site_staff[j,]$`site Fax`
+                              }
+                              
+                              #check email
+                              if(temp_site_staff[j,]$`Specify Role`=='Principal Investigator' && temp_site_staff[j,]$`E-mail`=="")
+                              {
+                                temp_site_staff[j,]$`E-mail`=temp_site_staff[j,]$`site Email`
+                              }
+                              
+                              #check Site Name
+                              if(temp_site_staff[j,]$`Site Name`=="")
+                              {
+                                temp_flag=append(temp_flag,"Site Name Missing; ")
+                                temp_site_staff[j,]$`Site Name`=temp_site_staff[j,]$`site Site Name`
+                              }
+                              
+                              #check site Address 1
+                              if(temp_site_staff[j,]$`Address 1`=="")
+                              {
+                                temp_flag=append(temp_flag,"Address 1 Missing; ")
+                                temp_site_staff[j,]$`Address 1`=temp_site_staff[j,]$`site Address 1`
+                              }
+                              
+                              #check site Address 2
+                              if(temp_site_staff[j,]$`Address 2`=="")
+                              {
+                                temp_flag=append(temp_flag,"Address 2 Missing; ")
+                                temp_site_staff[j,]$`Address 2`=temp_site_staff[j,]$`site Address 2`
+                              }
+                              
+                              #check site City
+                              if(temp_site_staff[j,]$City=="")
+                              {
+                                temp_flag=append(temp_flag,"City Missing; ")
+                                temp_site_staff[j,]$City=temp_site_staff[j,]$`site City`
+                              }
+                              
+                              #check site State/Province
+                              if(temp_site_staff[j,]$`State/Province`=="")
+                              {
+                                temp_flag=append(temp_flag,"State Missing; ")
+                                temp_site_staff[j,]$`State/Province`=temp_site_staff[j,]$`site State/Province`
+                              }
+                              
+                              #check site zip/postal code
+                              if(temp_site_staff[j,]$`Zip/Postal Code`=="")
+                              {
+                                temp_flag=append(temp_flag,"Zipcode Missing; ")
+                                temp_site_staff[j,]$`Zip/Postal Code`=temp_site_staff[j,]$`site Zip/Postal Code`
+                              }
+                              
+                              #check site country
+                              if(temp_site_staff[j,]$Country=="")
+                              {
+                                temp_flag=append(temp_flag,"Country Missing; ")
+                                temp_site_staff[j,]$Country=temp_site_staff[j,]$`site Country`
+                              }
+                              
+                              
+                              
+                              #check Covance checkbox
+                              if(('Yes' %in% temp_site_staff$`Covance e-Site Access`+'Yes' %in% temp_site_staff$`Covance Lab Reports` +'Yes' %in% temp_site_staff$`Covance Lab Supplies`)!=3)
+                              {
+                                if('Study Coordinator' %in% temp_site_staff$`Specify Role`)
+                                {
+                                  temp_flag=append(temp_flag,"Covance checkboxes haven't checked completely. Force SC to check it; ")
+                                  temp_site_staff[temp_site_staff$`Specify Role`=='Study Coordinator',c(34,35,36)]="Yes"
+                                }else
+                                {
+                                  temp_flag=append(temp_flag,"Covance checkboxes haven't checked completely. Force PI to check it; ")
+                                  temp_site_staff[temp_site_staff$`Specify Role`=='Principal Investigator',c(34,35,36)]="Yes"
+                                }
+                                
+                                
+                              }
+                              
+                              
+                            }
+                            
+                            
+                            #flag minor errors for drug
+                            for(k in 1:nrow(temp_site_drug))
+                            {
+                              if(temp_site_drug[k,]$`Drug Delivery Drug Address 2`=="")
+                              {
+                                temp_flag=append(temp_flag,"Drug Address 2 Missing; ")
+                              }
+                            }
+                            
+                            
+                            
+                            if(flag=="" & length(temp_flag)==0)
+                            {flag="Good condition"}else{
+                              flag=paste(flag,"Minors: ",paste(unique(temp_flag),collapse = ""),sep="")}
+                            
+                            new_report_log[i,7]=flag
+                            
+                            
+                            
+                            #combine temp tables 
+                            
+                            total_site_staff=rbind(total_site_staff,temp_site_staff)
+                            
+                            total_site_drug=rbind(total_site_drug,temp_site_drug)
+                            
+                            print(paste(i, " complete"))
                           }
-                        }
-                        
-                        
-                        #flag minor errors for drug
-                        for(k in 1:nrow(temp_site_drug))
-                        {
-                          if(temp_site_drug[k,]$`Drug Delivery Drug Address 2`=="")
-                          {
-                            temp_flag=append(temp_flag,"Drug Address 2 Missing; ")
-                          }
-                        }
-                        
-                        
-                        
-                        if(flag=="" & length(temp_flag)==0)
-                        {flag="Good condition"}else{
-                          flag=paste(flag,"Minors: ",paste(unique(temp_flag),collapse = ""),sep="")}
-                        
-                        new_report_log[i,7]=flag
-                        
-                        
-                        
-                        #combine temp tables 
-                        
-                        total_site_staff=rbind(total_site_staff,temp_site_staff)
-                        
-                        total_site_drug=rbind(total_site_drug,temp_site_drug)
-                        
-                        print(paste(i, " complete"))
-                      }
     
     
   }
@@ -702,7 +714,8 @@ if(length(list_files)>0)
       #bracket_site_user=sqldf(sql_bracket_site_user)
       if(length(grep("Bracket",colnames(total_site_staff)))>0)
       {
-        new_bracket_site_user=mutate(filter(total_site_staff, grepl('Yes', total_site_staff$`Bracket/IWRS Notification`) , `site Protocol No`==temp_protocol),`User Type`='Site User')
+        new_bracket_site_user=mutate(filter(total_site_staff, (grepl('Yes', total_site_staff$`Bracket/IWRS Access`) | grepl('Principal Investigator', total_site_staff$`Specify Role`)) , `site Protocol No`==temp_protocol),
+                                     `User Type`=ifelse(grepl('Principal Investigator',`Specify Role`),'Site Unblinder','Site User'))
         new_bracket_site_user=select(new_bracket_site_user,Date, `site Country`, `new_siteid`, `First Name`, `Last Name`, `User Type`, `E-mail`,Fax, Phone)
         colnames(new_bracket_site_user)=c('Add/Update Date', 'Country', 'SiteID', 'First Name', 'Last Name', 'User Type', 'Email', 'Fax', 'Phone')
         #========Brackete_IXRS_Site Import(2 tabs)
@@ -718,11 +731,11 @@ if(length(list_files)>0)
         #                       from total_site_staff
         #                       where `Bracket/IWRS Access` like '%Yes%' and `site Protocol No`='",temp_protocol,"'",sep="")
         
-        #bracket_site_additional=unique(sqldf(sql_bracket_site_additional))
+        #bracket_site_additional=unique(sqldf(sql_bracket_site_additional))  
         
-        temp_new_bracket_site_additional=filter(total_site_staff,grepl('Yes',total_site_staff$`Bracket/IWRS Access`), `site Protocol No`==temp_protocol)
+        temp_new_bracket_site_additional=filter(total_site_staff,grepl('Yes',total_site_staff$`Bracket/IWRS Notification`), `site Protocol No`==temp_protocol, `Specify Role`!='Principal Investigator')
         temp_new_bracket_site_additional=mutate(temp_new_bracket_site_additional, 'New Role'=ifelse(grepl('Principal Investigator', `Specify Role`), 'Investigator',
-                                                                                                    ifelse(grepl('Drug Delivery',`Specify Role`)|grepl('Pharmacy Technician',`Specify Role`),'Drug Delivery','Coordinator')))
+                                                                                                    ifelse(grepl('Drug Delivery',`Specify Role`)|grepl('Pharmacy Technician',`Specify Role`)|grepl('Pharmacist',`Specify Role`),'Drug Delivery','Coordinator')))
         new_bracket_site_additional=unique(select(temp_new_bracket_site_additional, Date, `site Country`, `new_siteid`, `New Role`, `First Name`, `Last Name`, `E-mail`))
         colnames(new_bracket_site_additional)=c('Add/Update Date', 'Region', 'SiteID', 'Contact Type', 'Contact First Name', 'Contact Last Name', 'Email Address')
         
@@ -947,13 +960,34 @@ if(length(list_files)>0)
       
       if(length(grep("Robarts",colnames(total_site_staff)))>0)
       {
-        new_robarts=select(mutate(filter(total_site_staff, ((`Specify Role`=="Principal Investigator" | `Specify Role`=="Study Coordinator") & `site Protocol No`==temp_protocol) |
-                                           ((`Specify Role`!="Principal Investigator" & `Specify Role`!="Study Coordinator") & `Robarts/Central Imaging Kit Shipments`=="Yes" & `site Protocol No`==temp_protocol)),
-                                  `Distribution Code`='', Role=ifelse(`Specify Role`=='Principal Investigator', 'Principal Investigator', ifelse(`Specify Role`=='Study Coordinator', 'Study Coordinator', 'Supplies Recipient')), 
-                                  Title='', `ISO Province`='', `Telephone area Code`='', Extension='', `Fax area code`=''),
-                           `Site number`=`site Site Number`, `Distribution Code`, Role, Title, `Last Name`, `First Name`, `Instituion Company`= `Site Name`,       
-                           `DepartmentBuilding`=`Address 2`, `Street`=`Address 1`, `Postal Code`=`Zip/Postal Code`, City, `State Province`=`State/Province`, `ISO Province`, `Country`, 
-                           `Country Phone Code`=Code, `Telephone area Code`, `Telephone number`=Phone, Extension, `Fax Country Code`=Code, `Fax area code`, `Fax number`=Fax, `E-Mail`=`E-mail`)
+        if( sum(total_site_staff$`Specify Role`!='Principal Investigator' & total_site_staff$`Specify Role`!='Study Coordinator' & total_site_staff$`Robarts/Central Imaging Kit Shipments`=='Yes')>0)
+        {
+          new_robarts=select(mutate(filter(total_site_staff, ((`Specify Role`=="Principal Investigator" | `Specify Role`=="Study Coordinator") & `site Protocol No`==temp_protocol) |
+                                             ((`Specify Role`!="Principal Investigator" & `Specify Role`!="Study Coordinator") & `Robarts/Central Imaging Kit Shipments`=="Yes" & `site Protocol No`==temp_protocol)),
+                                    `Distribution Code`='', Role=ifelse(`Specify Role`=='Principal Investigator', 'Principal Investigator', ifelse(`Specify Role`=='Study Coordinator', 'Study Coordinator', 'Supplies Recipient')), 
+                                    Title='', `ISO Province`='', `Telephone area Code`='', Extension='', `Fax area code`=''),
+                             `Site number`=`site Site Number`, `Distribution Code`, Role, Title, `Last Name`, `First Name`, `Instituion Company`= `Site Name`,       
+                             `DepartmentBuilding`=`Address 2`, `Street`=`Address 1`, `Postal Code`=`Zip/Postal Code`, City, `State Province`=`State/Province`, `ISO Province`, `Country`, 
+                             `Country Phone Code`=Code, `Telephone area Code`, `Telephone number`=Phone, Extension, `Fax Country Code`=Code, `Fax area code`, `Fax number`=Fax, `E-Mail`=`E-mail`)
+        }else{
+          new_robarts=select(mutate(filter(total_site_staff, ((`Specify Role`=="Principal Investigator" | `Specify Role`=="Study Coordinator") & `site Protocol No`==temp_protocol) |
+                                             ((`Specify Role`!="Principal Investigator" & `Specify Role`!="Study Coordinator") & `Robarts/Central Imaging Kit Shipments`=="Yes" & `site Protocol No`==temp_protocol)),
+                                    `Distribution Code`='', Role=ifelse(`Specify Role`=='Principal Investigator', 'Principal Investigator', ifelse(`Specify Role`=='Study Coordinator', 'Study Coordinator', 'Supplies Recipient')), 
+                                    Title='', `ISO Province`='', `Telephone area Code`='', Extension='', `Fax area code`=''),
+                             `Site number`=`site Site Number`, `Distribution Code`, Role, Title, `Last Name`, `First Name`, `Instituion Company`= `Site Name`,       
+                             `DepartmentBuilding`=`Address 2`, `Street`=`Address 1`, `Postal Code`=`Zip/Postal Code`, City, `State Province`=`State/Province`, `ISO Province`, `Country`, 
+                             `Country Phone Code`=Code, `Telephone area Code`, `Telephone number`=Phone, Extension, `Fax Country Code`=Code, `Fax area code`, `Fax number`=Fax, `E-Mail`=`E-mail`)
+          
+          temp_supplies=select(mutate(filter(total_site_staff, `Specify Role`=='Study Coordinator' & `site Protocol No`==temp_protocol),
+                                      `Distribution Code`='', Role='Supplies Recipient', 
+                                      Title='', `ISO Province`='', `Telephone area Code`='', Extension='', `Fax area code`=''),
+                               `Site number`=`site Site Number`, `Distribution Code`, Role, Title, `Last Name`, `First Name`, `Instituion Company`= `Site Name`,       
+                               `DepartmentBuilding`=`Address 2`, `Street`=`Address 1`, `Postal Code`=`Zip/Postal Code`, City, `State Province`=`State/Province`, `ISO Province`, `Country`, 
+                               `Country Phone Code`=Code, `Telephone area Code`, `Telephone number`=Phone, Extension, `Fax Country Code`=Code, `Fax area code`, `Fax number`=Fax, `E-Mail`=`E-mail`)
+          
+          new_robarts=rbind(new_robarts, temp_supplies)
+          
+        }
       }
       
       #=======================================================================================  
@@ -967,7 +1001,7 @@ if(length(list_files)>0)
           Bracket_Site_additional_hist=read.xlsx2(paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Additional Contacts", check.names=FALSE)
           bracket_site_additional=rbind(Bracket_Site_additional_hist, new_bracket_site_additional)
           
-          Bracket_Site_drug_hist=read.xlsx2(paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Drug Delivery Contacts", check.names=FALSE)
+          Bracket_Site_drug_hist=read.xlsx2(paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Site Import", check.names=FALSE)
           bracket_site_drug=rbind(Bracket_Site_drug_hist, new_bracket_site_drug)
         }
         
@@ -1040,9 +1074,9 @@ if(length(list_files)>0)
       {
         write.xlsx(bracket_site_user_import, paste(temp_protocol,"_Bracket_Site User Import Tracker",".xlsx",sep="") ,sheetName = "Site_User",append=FALSE,row.names=FALSE)
         
-        write.xlsx(bracket_site_additional, paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Additional Contacts",append=FALSE,row.names=FALSE)
+        write.xlsx(bracket_site_drug, paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Site Import",append=FALSE,row.names=FALSE)
         
-        write.xlsx(bracket_site_drug, paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Drug Delivery Contacts",append=TRUE,row.names=FALSE)
+        write.xlsx(bracket_site_additional, paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Additional Contacts",append=TRUE,row.names=FALSE)
       }
       ####EDC
       if(length(grep("EDC",colnames(total_site_staff)))>0)
