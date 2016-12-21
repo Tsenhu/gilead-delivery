@@ -417,14 +417,25 @@ for(i in 1:length(list_files))
           {
             new_report_log[i,7]=paste(flag,"Major: Staff's E-mail is missing; ")
             new_report_log[i,8]="On Hold"
-          }else
+          }else#unique email for members
             if(length(unique(paste(temp_site_staff$`Last Name`," ",temp_site_staff$`First Name`, sep="")))!=length(unique(temp_site_staff$`E-mail`)))
             {
               new_report_log[i,7]=paste(flag,"Major: E-mail is not unique;")
               new_report_log[i,8]="On Hold"
-            }else
-            {
-             new_report_log[i,8]="Pass"
+            }else #more than one SC
+              if(sum(temp_site_staff$`Specify Role`=='Study Coordinator')/length(unique(temp_site_staff$`site Protocol No`))>1)
+              {
+                new_report_log[i,7]=paste(flag, "Major: More than one Study Coordinators in this site; ")
+                new_report_log[i,8]="On Hold"
+              }else#multiple non PI SC memebers select Robarts
+                 if(sum(temp_site_staff$`Specify Role`!='Principal Investigator' & temp_site_staff$`Specify Role`!='Study Coordinator' & temp_site_staff$`Robarts/Central Imaging Kit Shipments`=='Yes')/
+                    length(unique(temp_site_staff$`site Protocol No`))>1)
+                  {
+                    new_report_log[i,7]=paste(flag, "Major: More than one non-PI, non-SC member have checked Robarts; ")
+                    new_report_log[i,8]="On Hold"
+                  }else
+                {
+                   new_report_log[i,8]="Pass"
 
     
     ###########################################################
@@ -538,6 +549,8 @@ for(i in 1:length(list_files))
         
         
       }
+      
+      
     }
     
 
@@ -702,7 +715,8 @@ for(i in 1:length(list_ptcl))
   #bracket_site_user=sqldf(sql_bracket_site_user)
   if(length(grep("Bracket",colnames(total_site_staff)))>0)
   {
-  new_bracket_site_user=mutate(filter(total_site_staff, grepl('Yes', total_site_staff$`Bracket/IWRS Notification`) , `site Protocol No`==temp_protocol),`User Type`='Site User')
+  new_bracket_site_user=mutate(filter(total_site_staff, (grepl('Yes', total_site_staff$`Bracket/IWRS Access`) | grepl('Principal Investigator', total_site_staff$`Specify Role`)) , `site Protocol No`==temp_protocol),
+                               `User Type`=ifelse(grepl('Principal Investigator',`Specify Role`),'Site Unblinder','Site User'))
   new_bracket_site_user=select(new_bracket_site_user,Date, `site Country`, `new_siteid`, `First Name`, `Last Name`, `User Type`, `E-mail`,Fax, Phone)
   colnames(new_bracket_site_user)=c('Add/Update Date', 'Country', 'SiteID', 'First Name', 'Last Name', 'User Type', 'Email', 'Fax', 'Phone')
 #========Brackete_IXRS_Site Import(2 tabs)
@@ -718,11 +732,11 @@ for(i in 1:length(list_ptcl))
   #                       from total_site_staff
   #                       where `Bracket/IWRS Access` like '%Yes%' and `site Protocol No`='",temp_protocol,"'",sep="")
   
-  #bracket_site_additional=unique(sqldf(sql_bracket_site_additional))
+  #bracket_site_additional=unique(sqldf(sql_bracket_site_additional))  
   
-  temp_new_bracket_site_additional=filter(total_site_staff,grepl('Yes',total_site_staff$`Bracket/IWRS Access`), `site Protocol No`==temp_protocol)
+  temp_new_bracket_site_additional=filter(total_site_staff,grepl('Yes',total_site_staff$`Bracket/IWRS Notification`), `site Protocol No`==temp_protocol, `Specify Role`!='Principal Investigator')
   temp_new_bracket_site_additional=mutate(temp_new_bracket_site_additional, 'New Role'=ifelse(grepl('Principal Investigator', `Specify Role`), 'Investigator',
-                                                                                              ifelse(grepl('Drug Delivery',`Specify Role`)|grepl('Pharmacy Technician',`Specify Role`),'Drug Delivery','Coordinator')))
+                                                                                              ifelse(grepl('Drug Delivery',`Specify Role`)|grepl('Pharmacy Technician',`Specify Role`)|grepl('Pharmacist',`Specify Role`),'Drug Delivery','Coordinator')))
   new_bracket_site_additional=unique(select(temp_new_bracket_site_additional, Date, `site Country`, `new_siteid`, `New Role`, `First Name`, `Last Name`, `E-mail`))
   colnames(new_bracket_site_additional)=c('Add/Update Date', 'Region', 'SiteID', 'Contact Type', 'Contact First Name', 'Contact Last Name', 'Email Address')
   
@@ -947,13 +961,34 @@ for(i in 1:length(list_ptcl))
   
   if(length(grep("Robarts",colnames(total_site_staff)))>0)
   {
-  new_robarts=select(mutate(filter(total_site_staff, ((`Specify Role`=="Principal Investigator" | `Specify Role`=="Study Coordinator") & `site Protocol No`==temp_protocol) |
+    if( sum(total_site_staff$`Specify Role`!='Principal Investigator' & total_site_staff$`Specify Role`!='Study Coordinator' & total_site_staff$`Robarts/Central Imaging Kit Shipments`=='Yes')>0)
+        {
+          new_robarts=select(mutate(filter(total_site_staff, ((`Specify Role`=="Principal Investigator" | `Specify Role`=="Study Coordinator") & `site Protocol No`==temp_protocol) |
                                        ((`Specify Role`!="Principal Investigator" & `Specify Role`!="Study Coordinator") & `Robarts/Central Imaging Kit Shipments`=="Yes" & `site Protocol No`==temp_protocol)),
                      `Distribution Code`='', Role=ifelse(`Specify Role`=='Principal Investigator', 'Principal Investigator', ifelse(`Specify Role`=='Study Coordinator', 'Study Coordinator', 'Supplies Recipient')), 
                      Title='', `ISO Province`='', `Telephone area Code`='', Extension='', `Fax area code`=''),
               `Site number`=`site Site Number`, `Distribution Code`, Role, Title, `Last Name`, `First Name`, `Instituion Company`= `Site Name`,       
               `DepartmentBuilding`=`Address 2`, `Street`=`Address 1`, `Postal Code`=`Zip/Postal Code`, City, `State Province`=`State/Province`, `ISO Province`, `Country`, 
               `Country Phone Code`=Code, `Telephone area Code`, `Telephone number`=Phone, Extension, `Fax Country Code`=Code, `Fax area code`, `Fax number`=Fax, `E-Mail`=`E-mail`)
+    }else{
+           new_robarts=select(mutate(filter(total_site_staff, ((`Specify Role`=="Principal Investigator" | `Specify Role`=="Study Coordinator") & `site Protocol No`==temp_protocol) |
+                                         ((`Specify Role`!="Principal Investigator" & `Specify Role`!="Study Coordinator") & `Robarts/Central Imaging Kit Shipments`=="Yes" & `site Protocol No`==temp_protocol)),
+                                `Distribution Code`='', Role=ifelse(`Specify Role`=='Principal Investigator', 'Principal Investigator', ifelse(`Specify Role`=='Study Coordinator', 'Study Coordinator', 'Supplies Recipient')), 
+                                Title='', `ISO Province`='', `Telephone area Code`='', Extension='', `Fax area code`=''),
+                         `Site number`=`site Site Number`, `Distribution Code`, Role, Title, `Last Name`, `First Name`, `Instituion Company`= `Site Name`,       
+                         `DepartmentBuilding`=`Address 2`, `Street`=`Address 1`, `Postal Code`=`Zip/Postal Code`, City, `State Province`=`State/Province`, `ISO Province`, `Country`, 
+                         `Country Phone Code`=Code, `Telephone area Code`, `Telephone number`=Phone, Extension, `Fax Country Code`=Code, `Fax area code`, `Fax number`=Fax, `E-Mail`=`E-mail`)
+           
+           temp_supplies=select(mutate(filter(total_site_staff, `Specify Role`=='Study Coordinator' & `site Protocol No`==temp_protocol),
+                                       `Distribution Code`='', Role='Supplies Recipient', 
+                                       Title='', `ISO Province`='', `Telephone area Code`='', Extension='', `Fax area code`=''),
+                                `Site number`=`site Site Number`, `Distribution Code`, Role, Title, `Last Name`, `First Name`, `Instituion Company`= `Site Name`,       
+                                `DepartmentBuilding`=`Address 2`, `Street`=`Address 1`, `Postal Code`=`Zip/Postal Code`, City, `State Province`=`State/Province`, `ISO Province`, `Country`, 
+                                `Country Phone Code`=Code, `Telephone area Code`, `Telephone number`=Phone, Extension, `Fax Country Code`=Code, `Fax area code`, `Fax number`=Fax, `E-Mail`=`E-mail`)
+           
+           new_robarts=rbind(new_robarts, temp_supplies)
+           
+        }
   }
 
 #=======================================================================================  
@@ -967,7 +1002,7 @@ for(i in 1:length(list_ptcl))
       Bracket_Site_additional_hist=read.xlsx2(paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Additional Contacts", check.names=FALSE)
       bracket_site_additional=rbind(Bracket_Site_additional_hist, new_bracket_site_additional)
       
-      Bracket_Site_drug_hist=read.xlsx2(paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Drug Delivery Contacts", check.names=FALSE)
+      Bracket_Site_drug_hist=read.xlsx2(paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Site Import", check.names=FALSE)
       bracket_site_drug=rbind(Bracket_Site_drug_hist, new_bracket_site_drug)
       }
       
@@ -1039,10 +1074,10 @@ for(i in 1:length(list_ptcl))
   if(length(grep("Bracket",colnames(total_site_staff)))>0)
   {
   write.xlsx(bracket_site_user_import, paste(temp_protocol,"_Bracket_Site User Import Tracker",".xlsx",sep="") ,sheetName = "Site_User",append=FALSE,row.names=FALSE)
-    
-  write.xlsx(bracket_site_additional, paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Additional Contacts",append=FALSE,row.names=FALSE)
   
-  write.xlsx(bracket_site_drug, paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Drug Delivery Contacts",append=TRUE,row.names=FALSE)
+  write.xlsx(bracket_site_drug, paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Site Import",append=FALSE,row.names=FALSE)
+  
+  write.xlsx(bracket_site_additional, paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Additional Contacts",append=TRUE,row.names=FALSE)
   }
   ####EDC
   if(length(grep("EDC",colnames(total_site_staff)))>0)
