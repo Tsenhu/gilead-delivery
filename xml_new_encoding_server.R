@@ -139,7 +139,7 @@ gilead_docx_tb=function(tst_xml, tst_tb)
         }
       }else
       {
-        if(length(grep('All Protocols',lc_clean[checked_index])))
+        if(length(grep('All Protocols|Both Protocols',lc_clean[checked_index])))
         {
           vals[cb_index]=paste((lc_clean[-1]), collapse=' and ')
         }else
@@ -307,10 +307,11 @@ gilead_docx=function(docx_xml)
 #===================================Main function
 
 #input_path="//chofile/Applications/ETLKCI/ETLUserSource/Gilead/Gilead_Diversity_and_Selection_Study/D&S_Input_Folder"
-input_path="//chofile/Applications/ETLKCI/ETLUserSource/Gilead/Gilead_Diversity_and_Selection_Study/D&S_Input_Folder"
-output_path="//chofile/Applications/ETLKCI/ETLUserSource/Gilead/Gilead_Diversity_and_Selection_Study/D&S_Output_Folder"
-finished_path="//chofile/Applications/ETLKCI/ETLUserSource/Gilead/Gilead_Diversity_and_Selection_Study/D&S_Archive_Folder"
-onhold_path="//chofile/Applications/ETLKCI/ETLUserSource/Gilead/Gilead_Diversity_and_Selection_Study/D&S_OnHold_Folder"
+input_path="//chofile/Applications/ETLKCI/ETLUserSource/Gilead/Gilead_Diversity_and_Selection_Study/Input_Folder"
+output_path="//chofile/Applications/ETLKCI/ETLUserSource/Gilead/Gilead_Diversity_and_Selection_Study/Output_Folder"
+finished_path="//chofile/Applications/ETLKCI/ETLUserSource/Gilead/Gilead_Diversity_and_Selection_Study/Archive_Folder"
+onhold_path="//chofile/Applications/ETLKCI/ETLUserSource/Gilead/Gilead_Diversity_and_Selection_Study/OnHold_Folder"
+
 
 setwd(input_path)
 list_files=list.files(pattern='.docx$')
@@ -649,7 +650,7 @@ if(length(list_files)>0)
       
       if(nchar(as.character(total_site_drug$`site Site Number`[sid]))==4)
       {
-        new_dsiteid=append(new_dsiteid, paste("0", total_site_drug$`site Site Number`[sid], sep=""))
+        new_dsiteid=append(new_dsiteid, paste("0", total_site_drug$`site Site Number`[sid], sep="")) 
       }
       
       if(nchar(as.character(total_site_drug$`site Site Number`[sid]))==3)
@@ -659,6 +660,10 @@ if(length(list_files)>0)
       
     }
     total_site_drug=cbind(total_site_drug,new_dsiteid)
+    if(length(grep('Drug Delivery Drug Institution Name', colnames(total_site_drug))))
+    {
+      colnames(total_site_drug)[grep('Drug Delivery Drug Institution Name', colnames(total_site_drug))]="Drug Delivery Drug Location"
+    }
   }
   #========================================================
   #move files to folders
