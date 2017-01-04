@@ -139,7 +139,7 @@ df=bind_rows(lapply(tst_rows,function(row)
             }
         }else
           {
-            if(length(grep('All Protocols',lc_clean[checked_index])))
+            if(length(grep('All Protocols|Both Protocols',lc_clean[checked_index])))
             {
               vals[cb_index]=paste((lc_clean[-1]), collapse=' and ')
             }else
@@ -650,7 +650,7 @@ for(sid in 1:nrow(total_site_drug))
   
   if(nchar(as.character(total_site_drug$`site Site Number`[sid]))==4)
   {
-    new_dsiteid=append(new_dsiteid, paste("0", total_site_drug$`site Site Number`[sid], sep=""))
+    new_dsiteid=append(new_dsiteid, paste("0", total_site_drug$`site Site Number`[sid], sep="")) 
   }
   
   if(nchar(as.character(total_site_drug$`site Site Number`[sid]))==3)
@@ -660,6 +660,10 @@ for(sid in 1:nrow(total_site_drug))
   
 }
 total_site_drug=cbind(total_site_drug,new_dsiteid)
+if(length(grep('Drug Delivery Drug Institution Name', colnames(total_site_drug))))
+{
+  colnames(total_site_drug)[grep('Drug Delivery Drug Institution Name', colnames(total_site_drug))]="Drug Delivery Drug Location"
+}
 }
 #========================================================
 #move files to folders
