@@ -418,7 +418,7 @@ if(length(list_files)>0)
                       new_report_log[i,7]=paste(flag,"Major: Staff's E-mail is missing; ")
                       new_report_log[i,8]="On Hold"
                     }else#unique email for members
-                      if(length(unique(paste(temp_site_staff$`Last Name`," ",temp_site_staff$`First Name`, sep="")))!=length(unique(temp_site_staff$`E-mail`)))
+                      if(length(unique(tolower(paste(temp_site_staff$`Last Name`," ",temp_site_staff$`First Name`, sep=""))))!=length(unique(temp_site_staff$`E-mail`)))
                       {
                         new_report_log[i,7]=paste(flag,"Major: E-mail is not unique;")
                         new_report_log[i,8]="On Hold"
