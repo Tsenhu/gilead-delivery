@@ -1,51 +1,24 @@
-#Version recorded on 9/26/2016 by Cen Hu
-#Update new output file name
-
-
-
-
-#Version recorded on 9/21/2016 by Cen Hu
-#Updates aggregation for report_log and all vendors
-
-
-#version recorded on 9/19/2016 by Cen Hu
-##update robarts vendor
+##
 library(xml2)
 library(dplyr)
-library(docxtractr)
 library(RODBC)
 library(sqldf)
-
-
-
-rm(list=ls())
-gc(reset=TRUE)
-
-start=Sys.time()
-
 #===================LOAD XLSX PACKAGE
 if (Sys.getenv("JAVA_HOME")!="")
        Sys.setenv(JAVA_HOME="")
 library(xlsx)
 
-#sample
-#write.xlsx(test$site_staff,file="C:/Users/hucen/GitHub/pro/python/Gilead_XML/
-#vendor_tracker/Vendor_Spreadsheets/tttt.xlsx",sheetName = "Site_staff",append=TRUE,row.names=FALSE)
+#===================memory reset
+rm(list=ls())
+gc(reset=TRUE)
+
+#===================start
+start=Sys.time()
 
 
-#number of tables in a word document
-###docx_xml=read_docx(f)
-###ns=docx_xml$ns
-###tbls_num=docx_tbl_count(docx_xml)
-  
-#check which tables have checkbox
-###sapply(docx_xml$tbls, function(x) grepl('checkBox', toString(x)))
+setwd("C:/Users/hucen/GitHub/gilead-delivery/")
+source("Main Function.R")
 
-#check which table have value--will check after compose dataframe,
-##by columns name if with val2 or not.
-
-#if with checkbox replace checkbox text to checked value(this should
-##be a nested function)
 country_code=data.frame(Country=c("Argentina", "Australia", "Austria", "Belgium",	"Bulgaria", "Bahamas",	"Brazil",	"Canada",	"Switzerland",	"Chile",
                                   "China",	"Colombia",	"Costa Rica",	"Czech Republic",	"Germany",	"Denmark",	"Dominican Republic",	"Ecuador",	"Egypt",
                                   "Spain",	"Estonia",	"Finland",	"France",	"United Kingdom",	"Greece",	"Guatemala",	"Hong Kong",	"Croatia",	"Haiti",
@@ -61,256 +34,24 @@ country_code=data.frame(Country=c("Argentina", "Australia", "Austria", "Belgium"
 
 
 
-#======================================================function for trim
-trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 
-#======================================================function for Upper and Lower country
-country_rename <- function(x) {
-
-  s <- strsplit(x, " ")[[1]]
-  paste(toupper(substring(s, 1,1)), tolower(substring(s, 2)),
-        sep="", collapse=" ")
-
-}
-
-#=====================================test file
-#For the first table, it always be the project info and site info
-##1. Get protocol id 2. save as site table
-###tst_tb=docx_xml$tbls[3]
-
-#xml_find_all(tst_tb,".//w:checkBox/w:default")
-#checkbox_value=lapply(xml_find_all(tst_tb,".//w:checkBox/w:default"), 
-#                      function(x) grep(1,toString(x)))
-
-
-#=======================================================function for a single table=============
-  
-gilead_docx_tb=function(tst_xml, tst_tb)
-{
-  
-#add flag for minors wrong info
-flag={}
-  
-ns=tst_xml$ns
-  
-tst_rows=xml_find_all(tst_tb,"./w:tr", ns=ns)
-
-df=bind_rows(lapply(tst_rows,function(row)
-  {
-    vals=xml_text(xml_find_all(row,".//w:tc", ns=ns), trim=TRUE)
-    
-    
-    if(length(grep("\u2610|\u2612|FORMCHECKBOX", vals)))
-    { 
-      #find index of the cell with checkbox value
-      cb_index=grep("\u2610|\u2612|FORMCHECKBOX",vals)
-      
-      #find checkbox value "1" or "0"
-      if(length(grep("\u2610|\u2612",vals)))
-      {
-        checkbox_value=lapply(xml_find_all(row,".//w14:checkbox/w14:checked"),
-                            function(x) grep('"1"',toString(x)))
-      }else{
-        checkbox_value=lapply(xml_find_all(row,".//w:checkBox/w:default"),
-                              function(x) grep(1,toString(x)))
-      }
-      #find the index of checkbox with value = "1"
-      checked_index=grep(1, checkbox_value)
-      
-      #list of value in the cell
-      lc=trim(unlist(strsplit(vals[cb_index],"\u2610|\u2612|FORMCHECKBOX")))
-      
-      #get rid of empty value in the list
-      lc_clean=lc[lc!=""]
-      
-      #detect if the checkbox row is for studyid or vendor
-      if(length(grep('Yes',lc_clean)))
-        {
-          #by default set all checkbox cell to "No"
-          vals[cb_index]="No"
-      
-          #return checked checkbox value to the cell
-          if(length(grep('Yes, PI Access',lc_clean[1])))
-            {
-              vals[ceiling((checked_index+3)/2)]=lc_clean[checked_index]
-            }else
-            {
-              vals[(checked_index+3)/2]=lc_clean[checked_index]
-            }
-        }else
-          {
-            if(length(grep('All Protocols|Both Protocols',lc_clean[checked_index])))
-            {
-              vals[cb_index]=paste((lc_clean[-1]), collapse=' and ')
-            }else
-            {
-              vals[cb_index]=paste((lc_clean[checked_index]), collapse=' and ')
-            }
-        
-          }
-    }
-    
-    names(vals)=sprintf("v%d",1:length(vals))
-    data.frame(as.list(vals),stringsAsFactors = FALSE)
-  }
-
-))
-
-#for site 
-if(ncol(df)==2 && nrow(df)==17)
-{
-
-  #get rid of ":"
-  df[,1]=gsub("\\:.*","",df[,1])
-  df=data.frame(df,row.names = NULL, check.names = FALSE)
-  colnames(df)=c('Para',"Value")
-  
-  t_df=t(df)
-  colnames(t_df)=paste("site ", t_df[1,], sep="")
-  t_df=data.frame(t_df,check.names = FALSE)
-  t_df=t_df[-1,]
-  t_df=t_df[,colSums(is.na(t_df))==0]
-  rownames(t_df)=NULL
-  extract_df=t_df
-}else #for site stuff
-  if(ncol(df)==5)
-{
-  t_df=t(df)
-  #get rid of explainations
-  colnames(t_df)=gsub("\\:.*","",t_df[1,])
-  t_df=data.frame(t_df[-1,],row.names=NULL, check.names = FALSE)
-  colnames(t_df)[1]="Specify Role"
-  
-  #removce column with no value
-  t_df=t_df[, colSums(is.na(t_df)) == 0] 
-  
-  #remove rows if "Specify Role" has no value
-  t_df=t_df[!(t_df$`Specify Role`)==""&!(is.na(t_df$`Specify Role`)),]
-
-  #remove rows if "Name" has no value
-  if(sum(t_df$`Last Name`=="")>0 & sum(t_df$`First Name`=="")>0)
-  {
-    flag=paste(flag,"Site staff table roles without name, deleted; ", sep="")
-    t_df=t_df[!((t_df$`Last Name`=="") + (t_df$`First Name`=="")),]
-  }
-  
-  extract_df=t_df
-  #if there is exception, add flag column
-
-}else #drug
-  if(ncol(df)==2 && nrow(df)==14)
-{
-  t_df=t(df)
-  colnames(t_df)=paste("Drug Delivery ",t_df[1,],sep="")
-  t_df=data.frame(t_df,check.names=FALSE)
-  t_df=t_df[,-1]
-  
-  colnames(t_df)=gsub("\\:.*","",colnames(t_df))
-  t_df=data.frame(t_df[-1,],row.names=NULL, check.names = FALSE)
-  rownames(t_df)=NULL
-  
-  extract_df=t_df
-  }else #for update log
-    if(ncol(df)==4)
-    {
-     colnames(df)=df[1,]
-     extract_df=df[-1,]
-    }else{
-    df[,1]=gsub("\\:.*","",df[,1])
-    df=data.frame(df,row.names=NULL, check.names = FALSE)
-    extract_df=df
-}
-
-
-
-return(list(extract_df=extract_df, flag=flag))
-}
-
-#========================================function for a single docx
-gilead_docx=function(docx_xml)
-{
-  if(docx_tbl_count(docx_xml)<1)
-  {
-    return(list())
-  }
-    ns=docx_xml$ns
-  
-  
-
-  t_site={}
-  staff={}
-  drug={}
-  compby={}
-  update_log={}
-  
-  t_site_dedu={}
-  site_staff={}
-  site_drug={}
-  
-  flag={}
-  
-  for(i in 1:docx_tbl_count(docx_xml))
-  {
-    tbl=gilead_docx_tb(docx_xml,docx_xml$tbls[i])$extract_df
-    flag=tbl$flag
-    #site
-    if( ncol(tbl)==16)
-    {
-      t_site=tbl
-    }else #staff 
-      if(ncol(tbl)==22 | ncol(tbl)==21 | ncol(tbl)==20)
-      {
-        if(!length(staff))
-        {
-          staff=rbind(staff,tbl)
-        }else{
-          colnames(tbl)=colnames(staff)
-          staff=rbind(staff,tbl)
-        }
-      }else #drug
-        if(ncol(tbl)==13)
-        {
-          drug=tbl
-        }else# completed by
-          if(nrow(tbl)==4 & ncol(tbl)==2)
-          {
-            compby=tbl
-          }else #log
-          {update_log=tbl}
-    
-  }
-  
-  
-  #==========================detect how many protocols in this word document
-  protocol_no=t_site$`site Protocol No`
-  list_protocol=trim(unlist(strsplit(toString(protocol_no), "and")))
-  
-  if(length(list_protocol)==0)
-  {
-    flag=paste("Protocol No Checkbox fatal error or Table sturcture has been changed.")
-  }
-  
-  if(length(list_protocol)>0)
-  {
-    for(i in 1:length(list_protocol))
-    {
-     t_site$`site Protocol No`=list_protocol[i]
-     t_site_dedu=rbind(t_site_dedu,t_site)
-    }
-  }
-  site_staff=merge(t_site_dedu,staff)
-  site_drug=merge(t_site_dedu,drug)
-  
-  return(list(site_staff=site_staff, site_drug=site_drug, compby=compby, update_log=update_log,flag=flag))
-}
 
 #===================================Main function
+setwd("C:/Users/hucen/GitHub/pro/python/Gilead_XML/multi_pro/")
+#locate project folder name
+file_folder=dir()
 
+form_folder=file_folder[-grep("Script|script",file_folder)]
+
+for(pro in 1:length(form_folder))
+{
+  
+print(form_folder[pro])
 #input_path="//chofile/Applications/ETLKCI/ETLUserSource/Gilead/Gilead_Diversity_and_Selection_Study/D&S_Input_Folder"
-input_path="C:/Users/hucen/GitHub/pro/python/Gilead_XML/input_file_new"
-output_path="C:/Users/hucen/GitHub/pro/python/Gilead_XML/output_file_new"
-finished_path="C:/Users/hucen/GitHub/pro/python/Gilead_XML/finished_file_new"
-onhold_path="C:/Users/hucen/GitHub/pro/python/Gilead_XML/onhold_file_new"
+input_path=paste0("C:/Users/hucen/GitHub/pro/python/Gilead_XML/multi_pro/",form_folder[pro],"/input_file_new")
+output_path=paste0("C:/Users/hucen/GitHub/pro/python/Gilead_XML/multi_pro/",form_folder[pro],"/output_file_new")
+finished_path=paste0("C:/Users/hucen/GitHub/pro/python/Gilead_XML/multi_pro/",form_folder[pro],"/finished_file_new")
+onhold_path=paste0("C:/Users/hucen/GitHub/pro/python/Gilead_XML/multi_pro/",form_folder[pro],"/onhold_file_new")
 #test_path="C:/Users/hucen/GitHub/pro/python/Gilead_XML/badass"
 
 setwd(input_path)
@@ -319,8 +60,8 @@ list_files=list.files(pattern='.docx$')
 total_site_staff={}
 total_site_drug={}
 new_report_log={}
-new_report_log=data.frame(matrix(ncol=8, nrow=length(list_files)))
-colnames(new_report_log)=c("Date", "FileName","Site","PI","UniqueSitePI", "StudyId", "Flag", "Result")
+new_report_log=data.frame(matrix(ncol=9, nrow=length(list_files)))
+colnames(new_report_log)=c("Date", "FileName","Site","PI","UniqueSitePI", "StudyId", "Flag", "Result","Status")
 
 if(length(list_files)>0)
 {
@@ -410,28 +151,28 @@ for(i in 1:length(list_files))
       }else#name not complete
         if((sum(temp_site_staff$`Last Name`=="")+sum(temp_site_staff$`First Name`==""))>0)
         {
-          new_report_log[i,7]=paste(flag,"Major: Staff's Name not Complete; ")
+          new_report_log[i,7]=paste(flag,"Major: Staff's Name not Complete; ", sep="")
           new_report_log[i,8]="On Hold"
         }else#email address not complete
           if(sum(temp_site_staff$`Specify Role`!='Principal Investigator' & temp_site_staff$`E-mail`=="")>0)
           {
-            new_report_log[i,7]=paste(flag,"Major: Staff's E-mail is missing; ")
+            new_report_log[i,7]=paste(flag,"Major: Staff's E-mail is missing; ", sep="")
             new_report_log[i,8]="On Hold"
           }else#unique email for members
             if(length(unique(tolower(paste(temp_site_staff$`Last Name`," ",temp_site_staff$`First Name`, sep=""))))!=length(unique(temp_site_staff$`E-mail`)))
             {
-              new_report_log[i,7]=paste(flag,"Major: E-mail is not unique;")
+              new_report_log[i,7]=paste(flag,"Major: E-mail is not unique; ", sep="")
               new_report_log[i,8]="On Hold"
             }else #more than one SC
               if(sum(temp_site_staff$`Specify Role`=='Study Coordinator')/length(unique(temp_site_staff$`site Protocol No`))>1)
               {
-                new_report_log[i,7]=paste(flag, "Major: More than one Study Coordinators in this site; ")
+                new_report_log[i,7]=paste(flag, "Major: More than one Study Coordinators in this site; ", sep="")
                 new_report_log[i,8]="On Hold"
               }else#multiple non PI SC memebers select Robarts
                  if(sum(temp_site_staff$`Specify Role`!='Principal Investigator' & temp_site_staff$`Specify Role`!='Study Coordinator' & temp_site_staff$`Robarts/Central Imaging Kit Shipments`=='Yes')/
                     length(unique(temp_site_staff$`site Protocol No`))>1)
                   {
-                    new_report_log[i,7]=paste(flag, "Major: More than one non-PI, non-SC member have checked Robarts; ")
+                    new_report_log[i,7]=paste(flag, "Major: More than one non-PI, non-SC member have checked Robarts; ", sep="")
                     new_report_log[i,8]="On Hold"
                   }else
                 {
@@ -955,8 +696,8 @@ for(i in 1:length(list_ptcl))
                      `if NO at what time does the Site normally close ?`='',`Language of Manual`='', `Send Start-Up? Y N`='', `Database`='', `This Column is Internationally Blank`='',
                      `eSite Access Exceptions [Default to eSite only] Mark if eSite and Fax reporting required`=''),
               `Site Number`=`site Site Number`, `Distribution Code`, Role=`Covance Role`, Title, `Last Name`=`Last Name`, `First Name`=`First Name`, `Insititution Company`=`Site Name`,
-              `DepartmentBuilding`=`Address 2`, `Street`=`Address 1`, `Postal Code`=`Zip/Postal Code`, City, `State Province`=`State/Province`, `ISO Province`, `Country`, 
-              `Country Phone Code`=Code, `Telephone area Code`, `Telephone number`=Phone, Extension, `Fax Country Code`=Code, `Fax area code`, `Fax number`=Fax, `Emergency number area code`,
+              `DepartmentBuilding`=`Address 2`, `Street`=`Address 1`, `Postal Code`=`Zip/Postal Code`, City, `State Province`=`State/Province`, `ISO Province`, `Country`, `Country Phone Code`=Code,
+              `Telephone area Code`, `Telephone number`=Phone, Extension, `Fax Country Code`=Code, `Fax area code`, `Fax number`=Fax, `Emergency number area code`,
               `Emergency phone number`, `Saturday Number Area Code`, `Saturday phone number`, `Mobile Number Area Code`, `Mobile or beeper number`, `E-Mail`=`E-mail`,`Sarstedt Monovette System Y N`,
               `Covance to arrange Dry IceY N`,`Patient block numbers`,`Faxing hours Start-EndTime`,`Are you open normal office hrs? i.e 9:00 AM-5:00 PM Y N?`,`if NO at what time does the Site normally close ?`,
               `Language of Manual`,`Send Start-Up? Y N`,`Database`,`This Column is Internationally Blank`,`eSite Access Exceptions [Default to eSite only] Mark if eSite and Fax reporting required`)
@@ -1127,9 +868,34 @@ report_log=report_log[,-ncol(report_log)]
 
 report_log=report_log[order(report_log$FileName, report_log$Date),]
 
-write.xlsx(report_log, paste("Report_log.xlsx"),sheetName = "Report",append = FALSE, row.names = FALSE)
+final_report={}
+#add a column to highlight current form conditions
+for(st in 1:length(unique(report_log$Site)))
+{
+  
+  #1. filter one site 2. add column status
+  temp_report=report_log[report_log$Site==unique(report_log$Site)[st], ]
+  temp_report$Status=factor(temp_report$Status,levels=c("History", "Current"))
+  
+  temp_report$Status="History"
+  if(nrow(temp_report)==1)
+  {
+    temp_report$Status="Current"
+  }else{
+    temp_report$Status[nrow(temp_report)]="Current"
+  }
+  
+  final_report=rbind(final_report,temp_report)
+}
+
+final_report=final_report[order(final_report$FileName, final_report$Date),]
+
+write.xlsx(final_report, paste("Report_log.xlsx"),sheetName = "Report",append = FALSE, row.names = FALSE)
   
 }
+
+}
+
 end=Sys.time()
 
 running_time=end-start
