@@ -507,8 +507,8 @@ for(i in 1:length(list_ptcl))
                                                                                   compare_col(`site Address 1`, `Drug Delivery Drug Address 1`) &
                                                                                   compare_col(`site Address 2`, `Drug Delivery Drug Address 2`) &
                                                                                   compare_col(`site City`, `Drug Delivery Drug City`), 'Yes', 'No'),
-                                   `siteAddress2`=ifelse(`site Address 3`=='',`site Address 2`,paste(`site Address 2`, `site Address 3`, sep = ", ")),
-                                   `drugAddress2`=ifelse(`Drug Delivery Drug Address 3`=='',`Drug Delivery Drug Address 2`, paste(`Drug Delivery Drug Address 2`,
+                                   `siteAddress2`=ifelse(`site Address 3`=='',as.character(`site Address 2`),paste(`site Address 2`, `site Address 3`, sep = ", ")),
+                                   `drugAddress2`=ifelse(`Drug Delivery Drug Address 3`=='',as.character(`Drug Delivery Drug Address 2`), paste(`Drug Delivery Drug Address 2`,
                                                                                                                                   `Drug Delivery Drug Address 3`, sep = ", " )))
   
   new_bracket_site_drug=select(temp_new_bracket_site_drug,`Add/Update Date`=Date, Country=`site Country`, SiteID=`new_dsiteid`, `Screening Status`, `Randomization Status`,
@@ -821,8 +821,10 @@ for(i in 1:length(list_ptcl))
   write.xlsx(bracket_site_user_import, paste(temp_protocol,"_Bracket_Site User Import Tracker",".xlsx",sep="") ,sheetName = "Site_User",append=FALSE,row.names=FALSE)
   
   write.xlsx(bracket_site_drug, paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Site Import",append=FALSE,row.names=FALSE)
-  
-  write.xlsx(bracket_site_additional, paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Additional Contacts",append=TRUE,row.names=FALSE)
+    if(nrow(bracket_site_additional)>0)
+    {
+     write.xlsx(bracket_site_additional, paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Additional Contacts",append=TRUE,row.names=FALSE)
+    }
   }
   ####EDC
   if(length(grep("EDC",colnames(total_site_staff)))>0)
