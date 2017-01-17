@@ -54,6 +54,8 @@ for(pro in 1:length(form_folder))
   onhold_path=paste0("//chofile/Applications/ETLKCI/ETLUserSource/Gilead/",form_folder[pro],"/OnHold_Folder")
   #test_path="C:/Users/hucen/GitHub/pro/python/Gilead_XML/badass"
   
+  
+  
   setwd(input_path)
   list_files=list.files(pattern='.docx$')
   
@@ -507,9 +509,9 @@ for(pro in 1:length(form_folder))
                                                                                                    compare_col(`site Address 1`, `Drug Delivery Drug Address 1`) &
                                                                                                    compare_col(`site Address 2`, `Drug Delivery Drug Address 2`) &
                                                                                                    compare_col(`site City`, `Drug Delivery Drug City`), 'Yes', 'No'),
-                                            `siteAddress2`=ifelse(`site Address 3`=='',`site Address 2`,paste(`site Address 2`, `site Address 3`, sep = ", ")),
-                                            `drugAddress2`=ifelse(`Drug Delivery Drug Address 3`=='',`Drug Delivery Drug Address 2`, paste(`Drug Delivery Drug Address 2`,
-                                                                                                                                           `Drug Delivery Drug Address 3`, sep = ", " )))
+                                            `siteAddress2`=ifelse(`site Address 3`=='',as.character(`site Address 2`),paste(`site Address 2`, `site Address 3`, sep = ", ")),
+                                            `drugAddress2`=ifelse(`Drug Delivery Drug Address 3`=='',as.character(`Drug Delivery Drug Address 2`), paste(`Drug Delivery Drug Address 2`,
+                                                                                                                                                         `Drug Delivery Drug Address 3`, sep = ", " )))
           
           new_bracket_site_drug=select(temp_new_bracket_site_drug,`Add/Update Date`=Date, Country=`site Country`, SiteID=`new_dsiteid`, `Screening Status`, `Randomization Status`,
                                        `Site Type for Supply Strategy`, `Threshold Resupply Status`, `Predictive Resupply Status`, Location=`site Site Name`, `Investigator First Name`=`site Investigator First Name`,
@@ -821,8 +823,10 @@ for(pro in 1:length(form_folder))
           write.xlsx(bracket_site_user_import, paste(temp_protocol,"_Bracket_Site User Import Tracker",".xlsx",sep="") ,sheetName = "Site_User",append=FALSE,row.names=FALSE)
           
           write.xlsx(bracket_site_drug, paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Site Import",append=FALSE,row.names=FALSE)
-          
-          write.xlsx(bracket_site_additional, paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Additional Contacts",append=TRUE,row.names=FALSE)
+          if(nrow(bracket_site_additional)>0)
+          {
+            write.xlsx(bracket_site_additional, paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Additional Contacts",append=TRUE,row.names=FALSE)
+          }
         }
         ####EDC
         if(length(grep("EDC",colnames(total_site_staff)))>0)
