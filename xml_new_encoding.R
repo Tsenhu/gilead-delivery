@@ -711,34 +711,41 @@ for(i in 1:length(list_ptcl))
   
   if(length(grep("Robarts",colnames(total_site_staff)))>0)
   {
-    if( sum(total_site_staff$`Specify Role`!='Principal Investigator' & total_site_staff$`Specify Role`!='Study Coordinator' & total_site_staff$`Robarts/Central Imaging Kit Shipments`=='Yes')>0)
-        {
-          new_robarts=select(mutate(filter(total_site_staff, ((`Specify Role`=="Principal Investigator" | `Specify Role`=="Study Coordinator") & `site Protocol No`==temp_protocol) |
-                                       ((`Specify Role`!="Principal Investigator" & `Specify Role`!="Study Coordinator") & `Robarts/Central Imaging Kit Shipments`=="Yes" & `site Protocol No`==temp_protocol)),
-                     `Distribution Code`='', Role=ifelse(`Specify Role`=='Principal Investigator', 'Principal Investigator', ifelse(`Specify Role`=='Study Coordinator', 'Study Coordinator', 'Supplies Recipient')), 
-                     Title='', `ISO Province`='', `Telephone area Code`='', Extension='', `Fax area code`=''),
-              `Site number`=`site Site Number`, `Distribution Code`, Role, Title, `Last Name`, `First Name`, `Instituion Company`= `Site Name`,       
-              `DepartmentBuilding`=`Address 2`, `Street`=`Address 1`, `Postal Code`=`Zip/Postal Code`, City, `State Province`=`State/Province`, `ISO Province`, `Country`, 
-              `Country Phone Code`=Code, `Telephone area Code`, `Telephone number`=Phone, Extension, `Fax Country Code`=Code, `Fax area code`, `Fax number`=Fax, `E-Mail`=`E-mail`)
-    }else{
-           new_robarts=select(mutate(filter(total_site_staff, ((`Specify Role`=="Principal Investigator" | `Specify Role`=="Study Coordinator") & `site Protocol No`==temp_protocol) |
-                                         ((`Specify Role`!="Principal Investigator" & `Specify Role`!="Study Coordinator") & `Robarts/Central Imaging Kit Shipments`=="Yes" & `site Protocol No`==temp_protocol)),
-                                `Distribution Code`='', Role=ifelse(`Specify Role`=='Principal Investigator', 'Principal Investigator', ifelse(`Specify Role`=='Study Coordinator', 'Study Coordinator', 'Supplies Recipient')), 
-                                Title='', `ISO Province`='', `Telephone area Code`='', Extension='', `Fax area code`=''),
-                         `Site number`=`site Site Number`, `Distribution Code`, Role, Title, `Last Name`, `First Name`, `Instituion Company`= `Site Name`,       
-                         `DepartmentBuilding`=`Address 2`, `Street`=`Address 1`, `Postal Code`=`Zip/Postal Code`, City, `State Province`=`State/Province`, `ISO Province`, `Country`, 
-                         `Country Phone Code`=Code, `Telephone area Code`, `Telephone number`=Phone, Extension, `Fax Country Code`=Code, `Fax area code`, `Fax number`=Fax, `E-Mail`=`E-mail`)
-           
-           temp_supplies=select(mutate(filter(total_site_staff, `Specify Role`=='Study Coordinator' & `site Protocol No`==temp_protocol),
-                                       `Distribution Code`='', Role='Supplies Recipient', 
-                                       Title='', `ISO Province`='', `Telephone area Code`='', Extension='', `Fax area code`=''),
-                                `Site number`=`site Site Number`, `Distribution Code`, Role, Title, `Last Name`, `First Name`, `Instituion Company`= `Site Name`,       
-                                `DepartmentBuilding`=`Address 2`, `Street`=`Address 1`, `Postal Code`=`Zip/Postal Code`, City, `State Province`=`State/Province`, `ISO Province`, `Country`, 
-                                `Country Phone Code`=Code, `Telephone area Code`, `Telephone number`=Phone, Extension, `Fax Country Code`=Code, `Fax area code`, `Fax number`=Fax, `E-Mail`=`E-mail`)
-           
-           new_robarts=rbind(new_robarts, temp_supplies)
-           
-        }
+    new_robarts={}
+    for (r in 1:nlevels(total_site_staff$`site Site Number`))
+    {
+      temp_site_robarts= filter(total_site_staff,`site Site Number`==levels(total_site_staff$`site Site Number`)[r])
+      
+      if( sum(temp_site_robarts$`Specify Role`!='Principal Investigator' & temp_site_robarts$`Specify Role`!='Study Coordinator' & temp_site_robarts$`Robarts/Central Imaging Kit Shipments`=='Yes')
+          & sum(temp_site_robarts$`Specify Role`=='Study Coordinator' & temp_site_robarts$`Robarts/Central Imaging Kit Shipments`=='No'))
+      {
+        temp_robarts=select(mutate(filter(temp_site_robarts, ((`Specify Role`=="Principal Investigator" | `Specify Role`=="Study Coordinator") & `site Protocol No`==temp_protocol) |
+                                            ((`Specify Role`!="Principal Investigator" & `Specify Role`!="Study Coordinator") & `Robarts/Central Imaging Kit Shipments`=="Yes" & `site Protocol No`==temp_protocol)),
+                                   `Distribution Code`='', Role=ifelse(`Specify Role`=='Principal Investigator', 'Principal Investigator', ifelse(`Specify Role`=='Study Coordinator', 'Study Coordinator', 'Supplies Recipient')), 
+                                   Title='', `ISO Province`='', `Telephone area Code`='', Extension='', `Fax area code`=''),
+                            `Site number`=`site Site Number`, `Distribution Code`, Role, Title, `Last Name`, `First Name`, `Instituion Company`= `Site Name`,       
+                            `DepartmentBuilding`=`Address 2`, `Street`=`Address 1`, `Postal Code`=`Zip/Postal Code`, City, `State Province`=`State/Province`, `ISO Province`, `Country`, 
+                            `Country Phone Code`=Code, `Telephone area Code`, `Telephone number`=Phone, Extension, `Fax Country Code`=Code, `Fax area code`, `Fax number`=Fax, `E-Mail`=`E-mail`)
+      }else{
+        temp_robarts=select(mutate(filter(temp_site_robarts, ((`Specify Role`=="Principal Investigator" | `Specify Role`=="Study Coordinator") & `site Protocol No`==temp_protocol)),
+                                   `Distribution Code`='', Role=ifelse(`Specify Role`=='Principal Investigator', 'Principal Investigator', ifelse(`Specify Role`=='Study Coordinator', 'Study Coordinator', 'Supplies Recipient')), 
+                                   Title='', `ISO Province`='', `Telephone area Code`='', Extension='', `Fax area code`=''),
+                            `Site number`=`site Site Number`, `Distribution Code`, Role, Title, `Last Name`, `First Name`, `Instituion Company`= `Site Name`,       
+                            `DepartmentBuilding`=`Address 2`, `Street`=`Address 1`, `Postal Code`=`Zip/Postal Code`, City, `State Province`=`State/Province`, `ISO Province`, `Country`, 
+                            `Country Phone Code`=Code, `Telephone area Code`, `Telephone number`=Phone, Extension, `Fax Country Code`=Code, `Fax area code`, `Fax number`=Fax, `E-Mail`=`E-mail`)
+        
+        temp_supplies=select(mutate(filter(temp_site_robarts, `Specify Role`=='Study Coordinator' & `site Protocol No`==temp_protocol),
+                                    `Distribution Code`='', Role='Supplies Recipient', 
+                                    Title='', `ISO Province`='', `Telephone area Code`='', Extension='', `Fax area code`=''),
+                             `Site number`=`site Site Number`, `Distribution Code`, Role, Title, `Last Name`, `First Name`, `Instituion Company`= `Site Name`,       
+                             `DepartmentBuilding`=`Address 2`, `Street`=`Address 1`, `Postal Code`=`Zip/Postal Code`, City, `State Province`=`State/Province`, `ISO Province`, `Country`, 
+                             `Country Phone Code`=Code, `Telephone area Code`, `Telephone number`=Phone, Extension, `Fax Country Code`=Code, `Fax area code`, `Fax number`=Fax, `E-Mail`=`E-mail`)
+        
+        temp_robarts=rbind(temp_robarts, temp_supplies)
+        
+      }
+      new_robarts=rbind(new_robarts,temp_robarts)
+    }
   }
 
 #=======================================================================================  
