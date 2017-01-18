@@ -1,4 +1,4 @@
-##
+####Updated on 1/18/2017
 library(xml2)
 library(dplyr)
 library(RODBC)
@@ -53,7 +53,6 @@ for(pro in 1:length(form_folder))
   finished_path=paste0("//chofile/Applications/ETLKCI/ETLUserSource/Gilead/",form_folder[pro],"/Archive_Folder")
   onhold_path=paste0("//chofile/Applications/ETLKCI/ETLUserSource/Gilead/",form_folder[pro],"/OnHold_Folder")
   #test_path="C:/Users/hucen/GitHub/pro/python/Gilead_XML/badass"
-  
   
   
   setwd(input_path)
@@ -177,153 +176,158 @@ for(pro in 1:length(form_folder))
                               new_report_log[i,7]=paste(flag, "Major: More than one non-PI, non-SC member have checked Robarts; ", sep="")
                               new_report_log[i,8]="On Hold"
                             }else
-                            {
-                              new_report_log[i,8]="Pass"
-                              
-                              
-                              ###########################################################
-                              #                     DATA IMPUTE AND CLEAN   for STAFF   #
-                              ###########################################################
-                              #record missing condition for blanks
-                              temp_flag={}
-                              
-                              #add levels to the blank columns
-                              for(lvl in 6:16)
+                              if(nchar(as.character(temp_site_staff[i,]$`site Site Number`))>5)
                               {
-                                levels(temp_site_staff[,lvl+14])=append(levels(temp_site_staff[,lvl+14]),levels(temp_site_staff[,lvl]))
-                              }
-                              
-                              #add levels to checkbox
-                              for(clvl in 31:length(temp_site_staff))
+                                new_report_log[i,7]=paste(flag,"Major: Site Number has more than 5 digits; ",sep="")
+                                new_report_log[i,8]="On Hold"
+                              }else
                               {
-                                levels(temp_site_staff[,clvl])=append(levels(temp_site_staff[,clvl]),c("Yes","No","Yes, PI Access"))
-                              }
-                              
-                              
-                              #flag minor errors for site
-                              for(j in 1:nrow(temp_site_staff))
-                              {
+                                new_report_log[i,8]="Pass"
                                 
                                 
+                                ###########################################################
+                                #                     DATA IMPUTE AND CLEAN   for STAFF   #
+                                ###########################################################
+                                #record missing condition for blanks
+                                temp_flag={}
                                 
-                                #check phone number
-                                if( temp_site_staff[j,]$Phone=="")
+                                #add levels to the blank columns
+                                for(lvl in 6:16)
                                 {
-                                  temp_flag=append(temp_flag,"Phone Number Missing; ")
-                                  temp_site_staff[j,]$Phone=temp_site_staff[j,]$`site Phone`
+                                  levels(temp_site_staff[,lvl+14])=append(levels(temp_site_staff[,lvl+14]),levels(temp_site_staff[,lvl]))
                                 }
                                 
-                                #check Fax
-                                if( temp_site_staff[j,]$Fax=="")
+                                #add levels to checkbox
+                                for(clvl in 31:length(temp_site_staff))
                                 {
-                                  temp_flag=append(temp_flag,"Fax Number Missing; ")
-                                  temp_site_staff[j,]$Fax=temp_site_staff[j,]$`site Fax`
-                                }
-                                
-                                #check email
-                                if(temp_site_staff[j,]$`Specify Role`=='Principal Investigator' && temp_site_staff[j,]$`E-mail`=="")
-                                {
-                                  temp_site_staff[j,]$`E-mail`=temp_site_staff[j,]$`site Email`
-                                }
-                                
-                                #check Site Name
-                                if(temp_site_staff[j,]$`Site Name`=="")
-                                {
-                                  temp_flag=append(temp_flag,"Site Name Missing; ")
-                                  temp_site_staff[j,]$`Site Name`=temp_site_staff[j,]$`site Site Name`
-                                }
-                                
-                                #check site Address 1
-                                if(temp_site_staff[j,]$`Address 1`=="")
-                                {
-                                  temp_flag=append(temp_flag,"Address 1 Missing; ")
-                                  temp_site_staff[j,]$`Address 1`=temp_site_staff[j,]$`site Address 1`
-                                }
-                                
-                                #check site Address 2
-                                if(temp_site_staff[j,]$`Address 2`=="")
-                                {
-                                  temp_flag=append(temp_flag,"Address 2 Missing; ")
-                                  temp_site_staff[j,]$`Address 2`=temp_site_staff[j,]$`site Address 2`
-                                }
-                                
-                                #check site City
-                                if(temp_site_staff[j,]$City=="")
-                                {
-                                  temp_flag=append(temp_flag,"City Missing; ")
-                                  temp_site_staff[j,]$City=temp_site_staff[j,]$`site City`
-                                }
-                                
-                                #check site State/Province
-                                if(temp_site_staff[j,]$`State/Province`=="")
-                                {
-                                  temp_flag=append(temp_flag,"State Missing; ")
-                                  temp_site_staff[j,]$`State/Province`=temp_site_staff[j,]$`site State/Province`
-                                }
-                                
-                                #check site zip/postal code
-                                if(temp_site_staff[j,]$`Zip/Postal Code`=="")
-                                {
-                                  temp_flag=append(temp_flag,"Zipcode Missing; ")
-                                  temp_site_staff[j,]$`Zip/Postal Code`=temp_site_staff[j,]$`site Zip/Postal Code`
-                                }
-                                
-                                #check site country
-                                if(temp_site_staff[j,]$Country=="")
-                                {
-                                  temp_flag=append(temp_flag,"Country Missing; ")
-                                  temp_site_staff[j,]$Country=temp_site_staff[j,]$`site Country`
+                                  levels(temp_site_staff[,clvl])=append(levels(temp_site_staff[,clvl]),c("Yes","No","Yes, PI Access"))
                                 }
                                 
                                 
-                                
-                                #check Covance checkbox
-                                if(('Yes' %in% temp_site_staff$`Covance e-Site Access`+'Yes' %in% temp_site_staff$`Covance Lab Reports` +'Yes' %in% temp_site_staff$`Covance Lab Supplies`)!=3)
+                                #flag minor errors for site
+                                for(j in 1:nrow(temp_site_staff))
                                 {
-                                  if('Study Coordinator' %in% temp_site_staff$`Specify Role`)
+                                  
+                                  
+                                  
+                                  #check phone number
+                                  if( temp_site_staff[j,]$Phone=="")
                                   {
-                                    temp_flag=append(temp_flag,"Covance checkboxes haven't checked completely. Force SC to check it; ")
-                                    temp_site_staff[temp_site_staff$`Specify Role`=='Study Coordinator',c(34,35,36)]="Yes"
-                                  }else
+                                    temp_flag=append(temp_flag,"Phone Number Missing; ")
+                                    temp_site_staff[j,]$Phone=temp_site_staff[j,]$`site Phone`
+                                  }
+                                  
+                                  #check Fax
+                                  if( temp_site_staff[j,]$Fax=="")
                                   {
-                                    temp_flag=append(temp_flag,"Covance checkboxes haven't checked completely. Force PI to check it; ")
-                                    temp_site_staff[temp_site_staff$`Specify Role`=='Principal Investigator',c(34,35,36)]="Yes"
+                                    temp_flag=append(temp_flag,"Fax Number Missing; ")
+                                    temp_site_staff[j,]$Fax=temp_site_staff[j,]$`site Fax`
+                                  }
+                                  
+                                  #check email
+                                  if(temp_site_staff[j,]$`Specify Role`=='Principal Investigator' && temp_site_staff[j,]$`E-mail`=="")
+                                  {
+                                    temp_site_staff[j,]$`E-mail`=temp_site_staff[j,]$`site Email`
+                                  }
+                                  
+                                  #check Site Name
+                                  if(temp_site_staff[j,]$`Site Name`=="")
+                                  {
+                                    temp_flag=append(temp_flag,"Site Name Missing; ")
+                                    temp_site_staff[j,]$`Site Name`=temp_site_staff[j,]$`site Site Name`
+                                  }
+                                  
+                                  #check site Address 1
+                                  if(temp_site_staff[j,]$`Address 1`=="")
+                                  {
+                                    temp_flag=append(temp_flag,"Address 1 Missing; ")
+                                    temp_site_staff[j,]$`Address 1`=temp_site_staff[j,]$`site Address 1`
+                                  }
+                                  
+                                  #check site Address 2
+                                  if(temp_site_staff[j,]$`Address 2`=="")
+                                  {
+                                    temp_flag=append(temp_flag,"Address 2 Missing; ")
+                                    temp_site_staff[j,]$`Address 2`=temp_site_staff[j,]$`site Address 2`
+                                  }
+                                  
+                                  #check site City
+                                  if(temp_site_staff[j,]$City=="")
+                                  {
+                                    temp_flag=append(temp_flag,"City Missing; ")
+                                    temp_site_staff[j,]$City=temp_site_staff[j,]$`site City`
+                                  }
+                                  
+                                  #check site State/Province
+                                  if(temp_site_staff[j,]$`State/Province`=="")
+                                  {
+                                    temp_flag=append(temp_flag,"State Missing; ")
+                                    temp_site_staff[j,]$`State/Province`=temp_site_staff[j,]$`site State/Province`
+                                  }
+                                  
+                                  #check site zip/postal code
+                                  if(temp_site_staff[j,]$`Zip/Postal Code`=="")
+                                  {
+                                    temp_flag=append(temp_flag,"Zipcode Missing; ")
+                                    temp_site_staff[j,]$`Zip/Postal Code`=temp_site_staff[j,]$`site Zip/Postal Code`
+                                  }
+                                  
+                                  #check site country
+                                  if(temp_site_staff[j,]$Country=="")
+                                  {
+                                    temp_flag=append(temp_flag,"Country Missing; ")
+                                    temp_site_staff[j,]$Country=temp_site_staff[j,]$`site Country`
+                                  }
+                                  
+                                  
+                                  
+                                  #check Covance checkbox
+                                  if(('Yes' %in% temp_site_staff$`Covance e-Site Access`+'Yes' %in% temp_site_staff$`Covance Lab Reports` +'Yes' %in% temp_site_staff$`Covance Lab Supplies`)!=3)
+                                  {
+                                    if('Study Coordinator' %in% temp_site_staff$`Specify Role`)
+                                    {
+                                      temp_flag=append(temp_flag,"Covance checkboxes haven't checked completely. Force SC to check it; ")
+                                      temp_site_staff[temp_site_staff$`Specify Role`=='Study Coordinator',c(34,35,36)]="Yes"
+                                    }else
+                                    {
+                                      temp_flag=append(temp_flag,"Covance checkboxes haven't checked completely. Force PI to check it; ")
+                                      temp_site_staff[temp_site_staff$`Specify Role`=='Principal Investigator',c(34,35,36)]="Yes"
+                                    }
+                                    
+                                    
                                   }
                                   
                                   
                                 }
                                 
                                 
-                              }
-                              
-                              
-                              #flag minor errors for drug
-                              for(k in 1:nrow(temp_site_drug))
-                              {
-                                if(temp_site_drug[k,]$`Drug Delivery Drug Address 2`=="")
+                                #flag minor errors for drug
+                                for(k in 1:nrow(temp_site_drug))
                                 {
-                                  temp_flag=append(temp_flag,"Drug Address 2 Missing; ")
+                                  if(temp_site_drug[k,]$`Drug Delivery Drug Address 2`=="")
+                                  {
+                                    temp_flag=append(temp_flag,"Drug Address 2 Missing; ")
+                                  }
                                 }
+                                
+                                
+                                
+                                if(flag=="" & length(temp_flag)==0)
+                                {flag="Good condition"}else{
+                                  flag=paste(flag,"Minors: ",paste(unique(temp_flag),collapse = ""),sep="")}
+                                
+                                new_report_log[i,7]=flag
+                                
+                                
+                                
+                                #combine temp tables 
+                                
+                                total_site_staff=rbind(total_site_staff,temp_site_staff)
+                                
+                                total_site_drug=rbind(total_site_drug,temp_site_drug)
+                                
+                                print(paste(i, " complete"))
                               }
-                              
-                              
-                              
-                              if(flag=="" & length(temp_flag)==0)
-                              {flag="Good condition"}else{
-                                flag=paste(flag,"Minors: ",paste(unique(temp_flag),collapse = ""),sep="")}
-                              
-                              new_report_log[i,7]=flag
-                              
-                              
-                              
-                              #combine temp tables 
-                              
-                              total_site_staff=rbind(total_site_staff,temp_site_staff)
-                              
-                              total_site_drug=rbind(total_site_drug,temp_site_drug)
-                              
-                              print(paste(i, " complete"))
-                            }
       
       
     }
