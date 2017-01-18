@@ -1,4 +1,4 @@
-##
+##Updated on 1/18/2017
 library(xml2)
 library(dplyr)
 library(RODBC)
@@ -175,7 +175,12 @@ for(i in 1:length(list_files))
                     new_report_log[i,7]=paste(flag, "Major: More than one non-PI, non-SC member have checked Robarts; ", sep="")
                     new_report_log[i,8]="On Hold"
                   }else
-                {
+                    if(nchar(as.character(temp_site_staff[i,]$`site Site Number`))>5)
+                    {
+                      new_report_log[i,7]=paste(flag,"Major: Site Number has more than 5 digits; ",sep="")
+                      new_report_log[i,8]="On Hold"
+                    }else
+                     {
                    new_report_log[i,8]="Pass"
 
     
