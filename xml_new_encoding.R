@@ -1,4 +1,4 @@
-##Updated on 1/18/2017
+##Updated on 1/20/2017
 library(xml2)
 library(dplyr)
 library(RODBC)
@@ -27,6 +27,11 @@ country_code=data.frame(Country=c("Argentina", "Australia", "Austria", "Belgium"
                                   "Norway",	"New Zealand",	"Oman",	"Pakistan",	"Panama",	"Peru",	"Philippines",	"Poland",	"Puerto Rico",	"Portugal",
                                   "Romania",	"Russia",	"Singapore",	"Serbia",	"Slovakia",	"Slovenia",	"Sweden",	"Thailand",	"Tunisia",	"Turkey",	"Taiwan",
                                   "Uganda",	"Ukraine",	"Uruguay",	"United States",	"Venezuela",	"Viet Nam",	"South Africa"),
+                        Abbreviations=c("ARG", "AUS" ,"AUT", "BEL", "BGR", "BHS", "BRA", "CAN", "CHE", "CHL", "CHN", "COL", "CRI", "CZE", "DEU", "DNK",
+                                        "DOM", "ECU" ,"EGY" ,"ESP", "EST" ,"FIN", "FRA", "GBR", "GRC", "GTM", "HKG", "HRV", "HTI", "HUN", "IDN", "IND",
+                                        "IRL", "ISL", "ISR", "ITA", "JAM", "JPN", "KOR", "LBN" ,"LTU" ,"LUX", "LVA", "MAR", "MDA", "MEX", "MLT", "MNE",
+                                        "MWI", "MYS", "NLD", "NOR", "NZL", "OMN", "PAK", "PAN", "PER", "PHL", "POL", "PRI", "PRT", "ROU", "RUS", "SGP",
+                                        "SRB", "SVK", "SVN", "SWE", "THA", "TUN", "TUR", "TWN", "UGA", "UKR", "URY", "USA", "VEN", "VNM", "ZAF"),
                         Code=c(54,	61,	43,	32,	359,	1,	55,	1,	41,	56,	86,	57,	506,	42,	49,	45,	1,	593,	20,	34,	372,	358,	33,	44,	30,	502,	852,	385,	1,	36,
                                62,	91,	353,	354,	972,	39,	1,	81,	82,	961,	370,	351,	371,	212,	373,	52,	356,	381,	265,	60,	31,	47,	64,	968,	92,	507,	51,
                                63,	48,	1, 351,	40,	7,	65,	381,	421,	386,	46,	66,	216,	90,	886,	256,	380,	598,	1,	58,	84,	27))
@@ -42,8 +47,8 @@ setwd("C:/Users/hucen/GitHub/pro/python/Gilead_XML/multi_pro/")
 file_folder=dir()
 
 form_folder=file_folder[-grep("Script|script",file_folder)]
-
-for(pro in 1:length(form_folder))
+#length(form_folder)
+for(pro in 1:1)
 {
   
 print(form_folder[pro])
@@ -175,7 +180,7 @@ for(i in 1:length(list_files))
                     new_report_log[i,7]=paste(flag, "Major: More than one non-PI, non-SC member have checked Robarts; ", sep="")
                     new_report_log[i,8]="On Hold"
                   }else
-                    if(nchar(as.character(temp_site_staff[i,]$`site Site Number`))>5)
+                    if(nchar(unique(as.character(temp_site_staff$`site Site Number`)))>5)
                     {
                       new_report_log[i,7]=paste(flag,"Major: Site Number has more than 5 digits; ",sep="")
                       new_report_log[i,8]="On Hold"
@@ -756,9 +761,13 @@ for(i in 1:length(list_ptcl))
       Bracket_Site_User_Import_hist=read.xlsx2(paste(temp_protocol,"_Bracket_Site User Import Tracker",".xlsx",sep="") ,sheetName = "Site_User", check.names=FALSE)
       bracket_site_user_import=rbind(Bracket_Site_User_Import_hist, new_bracket_site_user)
       
-      Bracket_Site_additional_hist=read.xlsx2(paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Additional Contacts", check.names=FALSE)
+
+      Bracket_Site_additional_hist=tryCatch(read.xlsx2(paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Additional Contacts", check.names=FALSE),
+                                            error=function(e) e)
+      if(is.data.frame(Bracket_Site_additional_hist))
+      {
       bracket_site_additional=rbind(Bracket_Site_additional_hist, new_bracket_site_additional)
-      
+      }else {bracket_site_additional=new_bracket_site_additional}
       Bracket_Site_drug_hist=read.xlsx2(paste(temp_protocol, "_Bracket_Site Import Tracker",".xlsx",sep="") ,sheetName = "Site Import", check.names=FALSE)
       bracket_site_drug=rbind(Bracket_Site_drug_hist, new_bracket_site_drug)
       }
@@ -781,13 +790,15 @@ for(i in 1:length(list_ptcl))
       if(length(grep("Covance",colnames(total_site_staff)))>0)
       {
       Covance_hist=read.xlsx2(paste(temp_protocol,"_Covance eSA_Investigator List Tracker", ".xlsx", sep=""),sheetName="Site Information", check.names=FALSE)
-      covance=rbind(Covance_hist, new_covance)
+      #move new covance before hist to get rid of factor issue
+      covance=rbind(new_covance, Covance_hist)
       }
       
       if(length(grep("Robarts",colnames(total_site_staff)))>0)
       {
       Robarts_hist=read.xlsx2(paste(temp_protocol,"_Robarts_Site List Tracker", ".xlsx", sep=""),sheetName = "Site Information", check.names=FALSE)
-      robarts=rbind(Robarts_hist, new_robarts)
+      #move new covance before hist to get rid of factor issue
+      robarts=rbind( new_robarts,Robarts_hist)
       }
       
     }else{
@@ -914,3 +925,7 @@ end=Sys.time()
 
 running_time=end-start
 print(running_time)
+
+
+
+
