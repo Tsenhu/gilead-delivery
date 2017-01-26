@@ -277,7 +277,7 @@ file.folder <- dir()
 
 form.folder <- file.folder[-grep("Script|script", file.folder)]
 #length(form.folder)
-for (pro in 1:1)
+for (pro in 1:length(form.folder))
 {
   print(form.folder[pro])
   #input.path="//chofile/Applications/ETLKCI/ETLUserSource/Gilead/Gilead_Diversity_and_Selection_Study/D&S_Input_Folder"
