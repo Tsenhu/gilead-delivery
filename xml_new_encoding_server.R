@@ -1,4 +1,4 @@
-##Updated on 1/20/2017
+##Updated on 1/26/2017
 library(xml2)
 library(dplyr)
 library(RODBC)
@@ -281,24 +281,24 @@ for (pro in 1:length(form.folder))
 {
   print(form.folder[pro])
   #input.path="//chofile/Applications/ETLKCI/ETLUserSource/Gilead/Gilead_Diversity_and_Selection_Study/D&S_Input_Folder"
-  input_path <- paste0(
+  input.path <- paste0(
     "//chofile/Applications/ETLKCI/ETLUserSource/Gilead/",
-    form_folder[pro],
+    form.folder[pro],
     "/Input_Folder"
   )
-  output_path <- paste0(
+  output.path <- paste0(
     "//chofile/Applications/ETLKCI/ETLUserSource/Gilead/",
-    form_folder[pro],
+    form.folder[pro],
     "/Output_Folder"
   )
-  finished_path <- paste0(
+  finished.path <- paste0(
     "//chofile/Applications/ETLKCI/ETLUserSource/Gilead/",
-    form_folder[pro],
+    form.folder[pro],
     "/Archive_Folder"
   )
-  onhold_path <- paste0(
+  onhold.path <- paste0(
     "//chofile/Applications/ETLKCI/ETLUserSource/Gilead/",
-    form_folder[pro],
+    form.folder[pro],
     "/OnHold_Folder"
   )
   
