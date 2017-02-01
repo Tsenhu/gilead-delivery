@@ -1,13 +1,17 @@
-##Updated on 1/20/2017
+##Updated on 2/01/2017
+
+
+  
 library(xml2)
 library(dplyr)
 library(RODBC)
 library(sqldf)
+
 #===================LOAD XLSX PACKAGE
 if (Sys.getenv("JAVA_HOME") != "")
   Sys.setenv(JAVA_HOME = "")
 library(xlsx)
-
+library(mailR)
 #===================memory reset
 rm(list = ls())
 gc(reset = TRUE)
@@ -19,265 +23,24 @@ start <- Sys.time()
 setwd("C:/Users/hucen/GitHub/gilead-delivery/")
 source("Main Function.R")
 
-country.code <- data.frame(
-  Country = c(
-    "Argentina",
-    "Australia",
-    "Austria",
-    "Belgium",
-    "Bulgaria",
-    "Bahamas",
-    "Brazil",
-    "Canada",
-    "Switzerland",
-    "Chile",
-    "China",
-    "Colombia",
-    "Costa Rica",
-    "Czech Republic",
-    "Germany",
-    "Denmark",
-    "Dominican Republic",
-    "Ecuador",
-    "Egypt",
-    "Spain",
-    "Estonia",
-    "Finland",
-    "France",
-    "United Kingdom",
-    "Greece",
-    "Guatemala",
-    "Hong Kong",
-    "Croatia",
-    "Haiti",
-    "Hungary",
-    "Indonesia",
-    "India",
-    "Ireland",
-    "Iceland",
-    "Israel",
-    "Italy",
-    "Jamaica",
-    "Japan",
-    "Korea",
-    "Lebanon",
-    "Lithuania",
-    "Luxembourg",
-    "Latvia",
-    "Morocco",
-    "Moldova",
-    "Mexico",
-    "Malta",
-    "Montenegro",
-    "Malawi",
-    "Malaysia",
-    "Netherlands",
-    "Norway",
-    "New Zealand",
-    "Oman",
-    "Pakistan",
-    "Panama",
-    "Peru",
-    "Philippines",
-    "Poland",
-    "Puerto Rico",
-    "Portugal",
-    "Romania",
-    "Russia",
-    "Singapore",
-    "Serbia",
-    "Slovakia",
-    "Slovenia",
-    "Sweden",
-    "Thailand",
-    "Tunisia",
-    "Turkey",
-    "Taiwan",
-    "Uganda",
-    "Ukraine",
-    "Uruguay",
-    "United States",
-    "Venezuela",
-    "Viet Nam",
-    "South Africa"
-  ),
-  Abbreviations = c(
-    "ARG",
-    "AUS" ,
-    "AUT",
-    "BEL",
-    "BGR",
-    "BHS",
-    "BRA",
-    "CAN",
-    "CHE",
-    "CHL",
-    "CHN",
-    "COL",
-    "CRI",
-    "CZE",
-    "DEU",
-    "DNK",
-    "DOM",
-    "ECU" ,
-    "EGY" ,
-    "ESP",
-    "EST" ,
-    "FIN",
-    "FRA",
-    "GBR",
-    "GRC",
-    "GTM",
-    "HKG",
-    "HRV",
-    "HTI",
-    "HUN",
-    "IDN",
-    "IND",
-    "IRL",
-    "ISL",
-    "ISR",
-    "ITA",
-    "JAM",
-    "JPN",
-    "KOR",
-    "LBN" ,
-    "LTU" ,
-    "LUX",
-    "LVA",
-    "MAR",
-    "MDA",
-    "MEX",
-    "MLT",
-    "MNE",
-    "MWI",
-    "MYS",
-    "NLD",
-    "NOR",
-    "NZL",
-    "OMN",
-    "PAK",
-    "PAN",
-    "PER",
-    "PHL",
-    "POL",
-    "PRI",
-    "PRT",
-    "ROU",
-    "RUS",
-    "SGP",
-    "SRB",
-    "SVK",
-    "SVN",
-    "SWE",
-    "THA",
-    "TUN",
-    "TUR",
-    "TWN",
-    "UGA",
-    "UKR",
-    "URY",
-    "USA",
-    "VEN",
-    "VNM",
-    "ZAF"
-  ),
-  Code = c(
-    54,
-    61,
-    43,
-    32,
-    359,
-    1,
-    55,
-    1,
-    41,
-    56,
-    86,
-    57,
-    506,
-    42,
-    49,
-    45,
-    1,
-    593,
-    20,
-    34,
-    372,
-    358,
-    33,
-    44,
-    30,
-    502,
-    852,
-    385,
-    1,
-    36,
-    62,
-    91,
-    353,
-    354,
-    972,
-    39,
-    1,
-    81,
-    82,
-    961,
-    370,
-    351,
-    371,
-    212,
-    373,
-    52,
-    356,
-    381,
-    265,
-    60,
-    31,
-    47,
-    64,
-    968,
-    92,
-    507,
-    51,
-    63,
-    48,
-    1,
-    351,
-    40,
-    7,
-    65,
-    381,
-    421,
-    386,
-    46,
-    66,
-    216,
-    90,
-    886,
-    256,
-    380,
-    598,
-    1,
-    58,
-    84,
-    27
-  )
-)
-
-
-
-
-
 
 #===================================Main function
-setwd("C:/Users/hucen/GitHub/pro/python/Gilead_XML/multi_pro/")
+base.dir=c("C:/Users/hucen/GitHub/pro/python/Gilead_XML/multi_pro/")
+setwd(base.dir)
+
+result <- tryCatch({
+#sink the output
+
+
 #locate project folder name
 file.folder <- dir()
 
-form.folder <- file.folder[-grep("Script|script", file.folder)]
+form.folder <- file.folder[-grep("Script|script|output", file.folder)]
+
+#inicial body text message
+body.msg=""
 #length(form.folder)
-for (pro in 1:1)
+for (pro in 1:length(form.folder))
 {
   print(form.folder[pro])
   #input.path="//chofile/Applications/ETLKCI/ETLUserSource/Gilead/Gilead_Diversity_and_Selection_Study/D&S_Input_Folder"
@@ -656,7 +419,23 @@ for (pro in 1:1)
                                 
                                 new.report.log[i, 7] <- flag
                                 
+                                if (length(grep(
+                                  'Drug Delivery Drug Institution Name',
+                                  colnames(total.site.drug)
+                                )))
+                                {
+                                  colnames(total.site.drug)[grep('Drug Delivery Drug Institution Name',
+                                                                 colnames(total.site.drug))] <- "Drug Delivery Drug Location"
+                                }
                                 
+                                if (length(grep(
+                                  'Drug Delivery Drug Institution Name',
+                                  colnames(temp.site.drug)
+                                )))
+                                {
+                                  colnames(temp.site.drug)[grep('Drug Delivery Drug Institution Name',
+                                                                 colnames(temp.site.drug))] <- "Drug Delivery Drug Location"
+                                }
                                 
                                 #combine temp tables
                                 
@@ -772,15 +551,10 @@ for (pro in 1:1)
         }
         
       }
+      
       total.site.drug <- cbind(total.site.drug, new.dsiteid)
-      if (length(grep(
-        'Drug Delivery Drug Institution Name',
-        colnames(total.site.drug)
-      )))
-      {
-        colnames(total.site.drug)[grep('Drug Delivery Drug Institution Name',
-                                       colnames(total.site.drug))] <- "Drug Delivery Drug Location"
-      }
+      
+
     }
     #========================================================
     #move files to folders
@@ -1140,6 +914,7 @@ for (pro in 1:1)
               Parent = 'CRO',
               `Domain Type` = 'Site',
               `Principal Investigator MIDDLE Name` = '',
+              `Site Address Line 3` = '',
               `Site Address Line 4` = '',
               `State*(USA) 2 character limited` = ifelse(
                 Country == 'United States',
@@ -1154,7 +929,12 @@ for (pro in 1:1)
                 ''
               ),
               `Phone Extension` = '',
-              TimeZone = ''
+              TimeZone = '',
+              `siteAddress2` = ifelse(
+                `site Address 3` == '',
+                as.character(`site Address 2`),
+                paste(`site Address 2`, `site Address 3`, sep = ", ")
+              )
             )
             ,
             Parent,
@@ -1165,9 +945,9 @@ for (pro in 1:1)
             `Principal Investigator MIDDLE Name`,
             `Principal Investigator LAST Name` = `site Investigator Last Name`,
             `Site Company Organization Name` = `Site Name`,
-            `Site Address Line 1` = `Address 1`,
-            `Site Address Line 2` = `Address 2`,
-            `Site Address Line 3` = `Address 3`,
+            `Site Address Line 1` = `site Address 1`,
+            `Site Address Line 2` = `siteAddress2`,
+            `Site Address Line 3`,
             `Site Address Line 4`,
             City,
             `State*(USA) 2 character limited`,
@@ -1464,15 +1244,18 @@ for (pro in 1:1)
               `Patient block numbers` = '',
               `Faxing hours Start-EndTime` = '',
               `Are you open normal office hrs? i.e 9:00 AM-5:00 PM Y N?` = '',
-              `if NO at what time does the Site normally close ?` =
-                '',
+              `if NO at what time does the Site normally close ?` = '',
               `Language of Manual` = '',
               `Send Start-Up? Y N` = '',
               `Database` = '',
               `This Column is Internationally Blank` = '',
-              `eSite Access Exceptions [Default to eSite only] Mark if eSite and Fax reporting required` =
-                ''
-            ),
+              `eSite Access Exceptions [Default to eSite only] Mark if eSite and Fax reporting required` = '',
+              `siteAddress2` = ifelse(
+                `site Address 3` == '',
+                as.character(`site Address 2`),
+                paste(`site Address 2`, `site Address 3`, sep = ", ")
+              )
+                          ),
             `Site Number` = `site Site Number`,
             `Distribution Code`,
             Role = `Covance Role`,
@@ -1480,8 +1263,8 @@ for (pro in 1:1)
             `Last Name` = `Last Name`,
             `First Name` = `First Name`,
             `Insititution Company` = `Site Name`,
-            `DepartmentBuilding` = `Address 2`,
-            `Street` = `Address 1`,
+            `DepartmentBuilding` = `siteAddress2`,
+            `Street` = `site Address 1`,
             `Postal Code` = `Zip/Postal Code`,
             City,
             `State Province` = `State/Province`,
@@ -1620,7 +1403,12 @@ for (pro in 1:1)
                   `ISO Province` = '',
                   `Telephone area Code` = '',
                   Extension = '',
-                  `Fax area code` = ''
+                  `Fax area code` = '',
+                  `siteAddress2` = ifelse(
+                    `site Address 3` == '',
+                    as.character(`site Address 2`),
+                    paste(`site Address 2`, `site Address 3`, sep = ", ")
+                  )
                 ),
                 `Site number` = `site Site Number`,
                 `Distribution Code`,
@@ -1629,8 +1417,8 @@ for (pro in 1:1)
                 `Last Name`,
                 `First Name`,
                 `Instituion Company` = `Site Name`,
-                `DepartmentBuilding` = `Address 2`,
-                `Street` = `Address 1`,
+                `DepartmentBuilding` = `siteAddress2`,
+                `Street` = `site Address 1`,
                 `Postal Code` = `Zip/Postal Code`,
                 City,
                 `State Province` = `State/Province`,
@@ -1659,7 +1447,12 @@ for (pro in 1:1)
                   `ISO Province` = '',
                   `Telephone area Code` = '',
                   Extension = '',
-                  `Fax area code` = ''
+                  `Fax area code` = '',
+                  `siteAddress2` = ifelse(
+                    `site Address 3` == '',
+                    as.character(`site Address 2`),
+                    paste(`site Address 2`, `site Address 3`, sep = ", ")
+                  )
                 ),
                 `Site number` = `site Site Number`,
                 `Distribution Code`,
@@ -1668,8 +1461,8 @@ for (pro in 1:1)
                 `Last Name`,
                 `First Name`,
                 `Instituion Company` = `Site Name`,
-                `DepartmentBuilding` = `Address 2`,
-                `Street` = `Address 1`,
+                `DepartmentBuilding` = `siteAddress2`,
+                `Street` = `site Address 1`,
                 `Postal Code` = `Zip/Postal Code`,
                 City,
                 `State Province` = `State/Province`,
@@ -1725,6 +1518,7 @@ for (pro in 1:1)
               error = function(e)
                 e
             )
+            
             if (is.data.frame(bracket.site.additional.hist))
             {
               bracket.site.additional <- rbind(bracket.site.additional.hist,
@@ -2022,7 +1816,18 @@ for (pro in 1:1)
       row.names = FALSE
     )
     
+    
+   temp.body.msg=paste("Gilead run for", form.folder[pro], "Success!", 
+                        length(list.files), "files have been processed.",
+                        sum(new.report.log$Result=="Pass"), "files pass, ",
+                        sum(new.report.log$Result=="On Hold"), "files onhold.\n")
+    
   }
+  if (exists("temp.body.msg"))
+    {
+      body.msg=paste(body.msg,temp.body.msg)
+      rm(temp.body.msg)
+    }
   
 }
 
@@ -2030,3 +1835,46 @@ end <- Sys.time()
 
 running.time <- end - start
 print(running.time)
+
+
+#tryCatch end
+}, error = function(e)
+  e 
+
+)
+
+
+#greenlight for email function, default is 1
+greenlight <- 1
+
+
+from <- "<Gilead-Server@prahs.com>"
+to   <- "<hucen@prahs.com>"
+subject <- "Gilead condition"
+smtp <- "smtpgateway.prant.praintl.local"
+
+if (grepl("error|Error",as.character(result)) && greenlight == 1)
+{
+  body.msg=paste(body.msg,"\n","Gilead run for", form.folder[pro],
+                "with no forms or fail:\n", as.character(result))
+  
+  send.mail(from=from, to=to, subject=subject, 
+            body=body.msg,smtp=list(host.name = smtp)
+  )
+}else
+  if (nchar(body.msg) > 0 && greenlight == 1)
+{
+  send.mail(from=from, to=to, subject=subject, 
+            body=body.msg,smtp=list(host.name = smtp)
+  )
+}
+#if (length(sink())==0){
+#  body=paste("Run Success!")
+#}else{
+#  body=paste(sink())
+#}
+
+
+
+
+          
