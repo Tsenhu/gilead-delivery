@@ -316,7 +316,7 @@ country.code <- data.frame(
     "Italy",
     "Jamaica",
     "Japan",
-    "Korea",
+    "South Korea",
     "Lebanon",
     "Lithuania",
     "Luxembourg",
