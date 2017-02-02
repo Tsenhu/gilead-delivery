@@ -28,9 +28,6 @@ source("Main Function.R")
 base.dir=c("//chofile/Applications/ETLKCI/ETLUserSource/Gilead/")
 setwd(base.dir)
 
-result <- tryCatch({
-  #sink the output
-  
   
   #locate project folder name
   file.folder <- dir()
@@ -42,6 +39,11 @@ result <- tryCatch({
   #length(form.folder)
   for (pro in 1:length(form.folder))
   {
+    
+    result <- tryCatch({
+      
+      
+    
     print(form.folder[pro])
     #input.path="//chofile/Applications/ETLKCI/ETLUserSource/Gilead/Gilead_Diversity_and_Selection_Study/D&S_Input_Folder"
     input.path <- paste0(
@@ -1833,6 +1835,12 @@ result <- tryCatch({
       rm(temp.body.msg)
     }
     
+    #tryCatch end
+    }, error = function(e)
+      e 
+    
+    )
+    
   }
   
   end <- Sys.time()
@@ -1841,11 +1849,7 @@ result <- tryCatch({
   print(running.time)
   
   
-  #tryCatch end
-}, error = function(e)
-  e 
 
-)
 
 
 #greenlight for email function, default is 1
@@ -1857,20 +1861,21 @@ to   <- "<hucen@prahs.com>"
 subject <- "Gilead condition"
 smtp <- "smtpgateway.prant.praintl.local"
 
-if (grepl("error|Error",as.character(result)) && greenlight == 1)
+if(!is.null(result))
 {
-  body.msg=paste(body.msg,"\n","Gilead run for", form.folder[pro],
-                 "with no forms or fail:\n", as.character(result))
-  
-  send.mail(from=from, to=to, subject=subject, 
-            body=body.msg,smtp=list(host.name = smtp)
-  )
+  if (grepl("error|Error",as.character(result)) && greenlight == 1)
+  {
+    body.msg <- paste(body.msg,"\n","Gilead run for", form.folder[pro],
+                      "with no forms or fail:\n", as.character(result))
+    
+    send.mail(from=from, to=to, subject=subject, 
+              body=body.msg,smtp=list(host.name = smtp))
+  }
 }else
   if (nchar(body.msg) > 0 && greenlight == 1)
   {
     send.mail(from=from, to=to, subject=subject, 
-              body=body.msg,smtp=list(host.name = smtp)
-    )
+              body=body.msg,smtp=list(host.name = smtp))
   }
 #if (length(sink())==0){
 #  body=paste("Run Success!")
