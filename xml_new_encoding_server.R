@@ -28,21 +28,26 @@ source("Main Function.R")
 base.dir=c("//chofile/Applications/ETLKCI/ETLUserSource/Gilead/")
 setwd(base.dir)
 
+
+
+#locate project folder name
+file.folder <- dir()
+
+form.folder <- file.folder[-grep("Script|script|output", file.folder)]
+
+#inicial body text message
+body.msg <- ""
+result <- ""
+#length(form.folder)
+for (pro in 1:length(form.folder))
+{
   
-  #locate project folder name
-  file.folder <- dir()
+  #if(result == "")
   
-  form.folder <- file.folder[-grep("Script|script|output", file.folder)]
-  
-  #inicial body text message
-  body.msg=""
-  #length(form.folder)
-  for (pro in 1:length(form.folder))
-  {
+  #{
+  result <- tryCatch({
     
-    result <- tryCatch({
-      
-      
+    folder.name <- form.folder[pro]
     
     print(form.folder[pro])
     #input.path="//chofile/Applications/ETLKCI/ETLUserSource/Gilead/Gilead_Diversity_and_Selection_Study/D&S_Input_Folder"
@@ -73,7 +78,7 @@ setwd(base.dir)
     #test_path="C:/Users/hucen/GitHub/pro/python/Gilead_XML/badass"
     
     setwd(input.path)
-    list.files <- list.files(pattern = '.docx$')
+    list.files <- list.files(pattern = '.docx$|.DOCX$')
     
     total.site.staff <- {}
     
@@ -234,7 +239,7 @@ setwd(base.dir)
                               temp.site.staff$`First Name`,
                               sep = ""
                             )
-                          ))) != length(unique(temp.site.staff$`E-mail`)))
+                          ))) != length(unique(tolower(temp.site.staff$`E-mail`))))
                           {
                             new.report.log[i, 7] <- paste(flag, "Major: E-mail is not unique; ", sep =
                                                             "")
@@ -1823,7 +1828,7 @@ setwd(base.dir)
       )
       
       
-      temp.body.msg=paste("Gilead run for", form.folder[pro], "Success!", 
+      temp.body.msg=paste("Gilead run for", folder.name, "Success!", 
                           length(list.files), "files have been processed.",
                           sum(new.report.log$Result=="Pass"), "files pass, ",
                           sum(new.report.log$Result=="On Hold"), "files onhold.\n")
@@ -1836,19 +1841,28 @@ setwd(base.dir)
     }
     
     #tryCatch end
-    }, error = function(e)
-      e 
-    
-    )
-    
+  }, error = function(e) e )
+  
+  if(is.null(result))
+  {
+    result <- ""
   }
-  
-  end <- Sys.time()
-  
-  running.time <- end - start
-  print(running.time)
+  #}
   
   
+  if( result != "")
+  {
+    if (grepl("error|Error",as.character(result)))
+    {
+      body.msg <- paste(body.msg,"\n","Gilead run for", folder.name,
+                        "with no forms or fail:\n", as.character(result),"\n")
+    }
+  }
+}
+
+
+
+
 
 
 
@@ -1861,22 +1875,12 @@ to   <- "<hucen@prahs.com>"
 subject <- "Gilead condition"
 smtp <- "smtpgateway.prant.praintl.local"
 
-if(!is.null(result))
+
+if (nchar(body.msg) > 0 && greenlight == 1)
 {
-  if (grepl("error|Error",as.character(result)) && greenlight == 1)
-  {
-    body.msg <- paste(body.msg,"\n","Gilead run for", form.folder[pro],
-                      "with no forms or fail:\n", as.character(result))
-    
-    send.mail(from=from, to=to, subject=subject, 
-              body=body.msg,smtp=list(host.name = smtp))
-  }
-}else
-  if (nchar(body.msg) > 0 && greenlight == 1)
-  {
-    send.mail(from=from, to=to, subject=subject, 
-              body=body.msg,smtp=list(host.name = smtp))
-  }
+  send.mail(from=from, to=to, subject=subject, 
+            body=body.msg,smtp=list(host.name = smtp))
+}
 #if (length(sink())==0){
 #  body=paste("Run Success!")
 #}else{
@@ -1884,5 +1888,8 @@ if(!is.null(result))
 #}
 
 
+end <- Sys.time()
 
+running.time <- end - start
+print(running.time)
 
